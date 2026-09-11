@@ -19,9 +19,35 @@ Plain reading: the seller never sees the carve. This is already an absolute rule
 
 Plain reading: nothing in that summary is fixed; it is the working idea; keep it simple. Treat 97 as direction, not specification; 01 governs.
 
+## Findings from the first detection run (2026-09-11)
+
+Full write-up in `docs/FINDINGS_2026-09-11.md`. The four that change the design:
+
+**F1. The break rule is refuted as specified.** Scored over 44 months and 5,376 classes, the conjunction rule
+fired on 0 of 456 dark classes and 4 of 4,912 controls. Two of its four primaries are inverted: churn-to-default
+(lift 0.81) and the smooth-senior-return half of condition D (lift 0.64). Condition C is near-useless at 1.25.
+Only condition A works, weakly, at 2.0. Real signal lives in the provision level (8.0x) and the 180+ ageing
+bucket (3.2x). The thresholds in `config/thresholds.yaml` are UNCHANGED and still tagged ASSUMPTION: refitting
+them changes the Day-1 script, which is a partner decision.
+
+**F2. The smooth quota return must come out of the Day-1 script.** Business case 2.6 field 8 makes it one of the
+three sentences that buy exclusivity. Measured, it fires on 19.0% of breaking funds and 29.5% of healthy ones.
+Keep the recompra sentence; lead instead with the provision and the 180+ bucket.
+
+**F3. The orphaned vehicles are not the natural attack.** Across Trustee, Banvox, CBSF, Sefer and Master, 161
+classes still filing, and zero pass the size gate. Median industrial-plus-commercial share is 0.0% for four of
+the five lineages, so the paper is not what the desk buys. Master has the right paper and a R$19.3m median PL.
+Archetype B, the 196 classes already in liquidação, is the same story: five have the loss booked and the right
+shape, all with PL between minus R$3m and R$9m.
+
+**F4. The executable count is 18, and the business case was close.** 4,321 FIDC classes filing at 2026-07 reduce
+to 420 with the loss booked, 99 with the right paper, 21 above the carteira floor, 18 above the PL floor and 16
+with a distinct gestor. The estimate of roughly fourteen was the closest headline number in the design. The list
+is `data/derived/calling_list_202607.csv` and is unfiltered for willingness, which should take it to about five.
+
 ## Questions the environment setup raised (2026-09-11)
 
-**A. Tabela VIII in the open data does not name the sacados.** The business case (Part 2.1, tagged VERIFIED) relies on Tabela VIII giving "CPF/CNPJ, R$, % PL" for the 25 largest sacados every month, and builds the D-dimension pre-exclusivity engine and the Day-1 sheet's field 12 on it. The CSV published by the CVM (`inf_mensal_fidc_tab_VIII_202608.csv`) carries only `SEQUENCIAL` and `VALOR` per fund; the dictionary describes no identity field. Either the identities exist in the informe as filed on Fundos.NET, or in another CVM extract, or they are not public. **BACKLOG #2 settles it.** If not public, the counterparty run has to be rebuilt from the lâmina (top-5 devedores and coobrigados by name), rating reports and the fund's litigation, and the Day-1 band is wider than Part 2.3 assumes.
+**A. Tabela VIII in the open data does not name the sacados.** CONFIRMED by the frozen mapping. The business case (Part 2.1, tagged VERIFIED) relies on Tabela VIII giving "CPF/CNPJ, R$, % PL" for the 25 largest sacados every month, and builds the D-dimension pre-exclusivity engine and the Day-1 sheet's field 12 on it. The CSV published by the CVM (`inf_mensal_fidc_tab_VIII_202608.csv`) carries only `SEQUENCIAL` and `VALOR` per fund; the dictionary describes no identity field. Either the identities exist in the informe as filed on Fundos.NET, or in another CVM extract, or they are not public. **BACKLOG #2 settles it.** If not public, the counterparty run has to be rebuilt from the lâmina (top-5 devedores and coobrigados by name), rating reports and the fund's litigation, and the Day-1 band is wider than Part 2.3 assumes.
 
 **B. Cedentes are partly named in Tabela I.** `TAB_I2A12_CPF_CNPJ_CEDENTE_1…9` with `TAB_I2A12_PR_CEDENTE_n` (participation). The business case says cedentes are "usually empty in a genuine multicedente book" — to be measured on the population (BACKLOG #3).
 

@@ -11,8 +11,9 @@
 1. `docs/01_business_case_final_2026-09-10.md` — the business case, final. Part 1 is the business in one page; Part 9 is the decision.
 2. `docs/02_pacote_de_compradores_2026-09-10.md` — the buyer package (buyer-facing pages in Portuguese).
 3. `docs/03_forensic_oracle_layer.md` — the specification of the Oracle.
-4. `docs/OPEN_NOTES.md` — MGC's typed notes and the open questions the environment setup surfaced.
-5. `docs/BACKLOG.md` — the engineering work, in order. `docs/GATES.md` — the non-engineering conditions.
+4. `docs/FINDINGS_2026-09-11.md` — the first detection run: what the data says about the break rule and the supply.
+5. `docs/OPEN_NOTES.md` — MGC's typed notes and the open questions the environment setup surfaced.
+6. `docs/BACKLOG.md` — the engineering work, in order. `docs/GATES.md` — the non-engineering conditions.
 
 The Google Docs in the Drive folder are canonical; the markdown copies are working snapshots (`docs/SOURCES.md` has the IDs).
 
@@ -20,8 +21,8 @@ The Google Docs in the Drive folder are canonical; the markdown copies are worki
 
 | Step | Tool | Status |
 |---|---|---|
-| Detect: read every FIDC informe monthly, rank the broken ones | `vazante cvm fetch` (bulk layer), `vazante.cvm.breakflag` | Feed verified; mapping not frozen; rule not built |
-| Screen: the five filters that produce the calling list | `vazante.cvm.screen` | Stub — needs the mapping and the Fundos.NET client |
+| Detect: read every FIDC informe monthly, rank the broken ones | `vazante cvm fetch`, `vazante.cvm.panel`, `vazante.cvm.indicators` | 44 months loaded; mapping FROZEN; rule backtested and REFUTED as specified (docs/FINDINGS) |
+| Screen: the five filters that produce the calling list | `scripts/screen.py` | Runs; 16 named classes at 2026-07. Filter (i) needs Fundos.NET |
 | Pack: the two-page Day-1 sheet in 3.5–5 hours | `vazante.cvm.fnet` + counterparty run | Not built |
 | Call → exclusivity → tape | GC, with the pack | Not started |
 | Oracle: E/T/C/D/R on the tape, the forensic bridge, the lift list | `vazante.oracle` | Vocabulary, evidence wrapper, bridge and validators built; sweep and dimension engines not |

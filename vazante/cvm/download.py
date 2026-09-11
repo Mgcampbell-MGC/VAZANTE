@@ -23,6 +23,7 @@ from vazante.config import RAW_DIR
 
 BASE = "https://dados.cvm.gov.br/dados"
 INF_MENSAL_DIR = f"{BASE}/FIDC/DOC/INF_MENSAL/DADOS/"
+INF_MENSAL_HIST = f"{BASE}/FIDC/DOC/INF_MENSAL/DADOS/HIST/"
 INF_MENSAL_META = f"{BASE}/FIDC/DOC/INF_MENSAL/META/meta_inf_mensal_fidc_txt.zip"
 CAD_FI = f"{BASE}/FI/CAD/DADOS/cad_fi.csv"
 
@@ -30,6 +31,7 @@ CVM_RAW = RAW_DIR / "cvm"
 MANIFEST = CVM_RAW / "manifest.jsonl"
 
 _MONTH_RE = re.compile(r"inf_mensal_fidc_(\d{6})\.zip")
+_YEAR_RE = re.compile(r"inf_mensal_fidc_(\d{4})\.zip")
 _TIMEOUT = (30, 600)
 _HEADERS = {"User-Agent": "vazante-desk/0.1"}
 _DESK_TZ = ZoneInfo("America/Sao_Paulo")
@@ -153,3 +155,43 @@ def informe_headers(zip_path: Path) -> dict[str, list[str]]:
             with z.open(name) as f:
                 out[name] = f.readline().decode("latin-1").rstrip("\r\n").split(";")
     return out
+
+
+def list_available_years() -> list[str]:
+    """Years archived under DADOS/HIST/ (the CVM keeps only the current and prior year as monthly files)."""
+    r = requests.get(INF_MENSAL_HIST, headers=_HEADERS, timeout=_TIMEOUT)
+    r.raise_for_status()
+    return sorted(set(_YEAR_RE.findall(r.text)))
+
+
+def fetch_informe_year(year: str, force: bool = False) -> Path:
+    """One year's archive. Contains that year's twelve monthly ZIPs, each holding the usual CSV members."""
+    dest = CVM_RAW / "inf_mensal_hist" / f"inf_mensal_fidc_{year}.zip"
+    if dest.exists() and not force:
+        return dest
+    return download(f"{INF_MENSAL_HIST}inf_mensal_fidc_{year}.zip", dest)
+
+
+def expand_year_archive(year: str) -> list[Path]:
+    """Unpack a year archive into the same dated-snapshot layout the monthly downloads use.
+
+    The year archives hold the CSV members directly (inf_mensal_fidc_tab_<T>_<YYYYMM>.csv), not nested monthly
+    ZIPs, so the members are regrouped by competency month into one ZIP per month.
+    """
+    archive = fetch_informe_year(year)
+    by_month: dict[str, list[str]] = {}
+    with zipfile.ZipFile(archive) as z:
+        for name in z.namelist():
+            m = re.search(r"_(\d{6})\.csv$", name)
+            if m:
+                by_month.setdefault(m.group(1), []).append(name)
+        out: list[Path] = []
+        for month, members in sorted(by_month.items()):
+            dest = CVM_RAW / "inf_mensal" / month / f"fetched-{_today()}.zip"
+            if not dest.exists():
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as out_zip:
+                    for member in sorted(members):
+                        out_zip.writestr(Path(member).name, z.read(member))
+            out.append(dest)
+    return sorted(out)

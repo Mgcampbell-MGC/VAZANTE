@@ -1,0 +1,187 @@
+# Informe Mensal FIDC — FROZEN TABLE MAPPING
+#
+# Frozen 2026-09-11 from two primary sources, both in docs/reference/:
+#   - the CVM's own field dictionary (META/meta_inf_mensal_fidc_txt.zip)
+#   - the observed CSV headers of competência 2026-08
+# Status: VERIFIED against the dictionary's field descriptions, which carry the Suplemento G item numbers
+# (e.g. "(I.2.a.11) Provisão para Redução no Valor de Recuperação (-)"). Every concept below cites that number.
+#
+# CORRECTIONS to the business case Part 2.1, logged in docs/OPEN_NOTES.md:
+#   - a.11 / b.11 is the PROVISION, not a cedente name. The cedentes are a.12 / b.12, nine slots with participation.
+#   - Tabela VIII carries SEQUENCIAL and VALOR only. No sacado identity in the open data.
+#   - The informe is filed per CLASSE (TP_FUNDO_CLASSE = 'Classe'), keyed on CNPJ_FUNDO_CLASSE.
+#   - "RESG_SOLIC" is not a column. Redemptions requested are rows of Tabela X.4 with TP_OPER = 'Resgates Solicitados'.
+#
+# Structure of a concept:
+#   tab      the ZIP member's table suffix
+#   column   one column, or
+#   columns  several columns summed (aggregate: sum)
+#   filter   for long tables, the column/value pair that selects the rows
+#   item     the Suplemento G item number from the dictionary
+#   note     anything a reader needs in order not to misuse it
+
+version: 1
+frozen_on: 2026-09-11
+frozen_from: [META/meta_inf_mensal_fidc_txt.zip, inf_mensal_fidc_202608.zip]
+
+keys:
+  fund_class: CNPJ_FUNDO_CLASSE
+  # Res. CVM 175 moved the informe from fund level to class level during 2024. Before that the long tables
+  # (X_1..X_7) key on CNPJ_FUNDO; Tabelas I-IX carried CNPJ_FUNDO_CLASSE throughout. Observed at 2023-01 vs 2024-06.
+  fund_class_legacy_aliases: [CNPJ_FUNDO, CNPJ_FUNDO_CLASSE_SERIE]
+  # Tabela X (SCR risk buckets) does not exist before 2024; concepts drawn from it are null in earlier months.
+  fund_class_type: TP_FUNDO_CLASSE     # 'Classe' (656 of 664 rows in 2026-08) or 'Fundo'
+  name: DENOM_SOCIAL
+  competency_date: DT_COMPTC
+
+concepts:
+
+  # ---- identity and size -------------------------------------------------
+  administrador_cnpj:      {tab: I,  column: CNPJ_ADMIN, dtype: text}
+  administrador_nome:      {tab: I,  column: ADMIN, dtype: text}
+  classe_unica:            {tab: I,  column: CLASSE_UNICA, dtype: text}
+  condominio:              {tab: I,  column: CONDOM, dtype: text}
+  fundo_exclusivo:         {tab: I,  column: FUNDO_EXCLUSIVO, dtype: text}
+  prazo_pagto_resgate:     {tab: I,  column: PRAZO_PAGTO_RESGATE, dtype: text}
+  ativo_total:             {tab: I,  column: TAB_I_VL_ATIVO,   item: I}
+  disponibilidades:        {tab: I,  column: TAB_I1_VL_DISP,   item: I.1}
+  carteira:                {tab: I,  column: TAB_I2_VL_CARTEIRA, item: I.2}
+  pl:                      {tab: IV, column: TAB_IV_A_VL_PL,   item: IV.a}
+  pl_medio:                {tab: IV, column: TAB_IV_B_VL_PL_MEDIO, item: IV.b}
+  passivo:                 {tab: III, column: TAB_III_VL_PASSIVO, item: III}
+
+  # ---- direitos creditórios, split by substantial transfer of risk -------
+  # The split is the fund-level proxy for the R dimension: "com aquisição substancial dos riscos" means the fund
+  # took the credit risk; "sem" means risk stayed with the cedente, which is where recourse language lives.
+  dircred_com_risco:       {tab: I, column: TAB_I2A_VL_DIRCRED_RISCO,     item: I.2.a}
+  dircred_sem_risco:       {tab: I, column: TAB_I2B_VL_DIRCRED_SEM_RISCO, item: I.2.b}
+  cred_a_vencer:           {tab: I, columns: [TAB_I2A1_VL_CRED_VENC_AD, TAB_I2B1_VL_CRED_VENC_AD], aggregate: sum, item: I.2.a.1/b.1}
+  cred_a_vencer_com_parcela_inad: {tab: I, columns: [TAB_I2A2_VL_CRED_VENC_INAD, TAB_I2B2_VL_CRED_VENC_INAD], aggregate: sum, item: I.2.a.2/b.2}
+  cred_inadimplentes:      {tab: I, columns: [TAB_I2A3_VL_CRED_INAD, TAB_I2B3_VL_CRED_INAD], aggregate: sum, item: I.2.a.3/b.3}
+  cred_empresa_recuperacao: {tab: I, columns: [TAB_I2A6_VL_CRED_EMP_RECUP, TAB_I2B6_VL_CRED_EMP_RECUP], aggregate: sum, item: I.2.a.6/b.6}
+  cred_receita_publica:    {tab: I, columns: [TAB_I2A7_VL_CRED_RECEITA_PUBLICA, TAB_I2B7_VL_CRED_RECEITA_PUBLICA], aggregate: sum, item: I.2.a.7/b.7}
+  cred_acao_judicial:      {tab: I, columns: [TAB_I2A8_VL_CRED_ACAO_JUDIC, TAB_I2B8_VL_CRED_ACAO_JUDIC], aggregate: sum, item: I.2.a.8/b.8}
+  pdd:
+    tab: I
+    columns: [TAB_I2A11_VL_REDUCAO_RECUP, TAB_I2B11_VL_REDUCAO_RECUP]
+    aggregate: sum
+    item: I.2.a.11/b.11
+    note: >
+      "Provisão para Redução no Valor de Recuperação (-)". This is the ICVM 489 art. 11 provision and the PDD of
+      the business case. Filed as a negative or a positive depending on the administrador; take the absolute value.
+
+  # ---- cedentes (the R dimension, where the fund names them) --------------
+  cedentes_com_risco:
+    tab: I
+    columns: [TAB_I2A12_CPF_CNPJ_CEDENTE_1, TAB_I2A12_CPF_CNPJ_CEDENTE_2, TAB_I2A12_CPF_CNPJ_CEDENTE_3,
+              TAB_I2A12_CPF_CNPJ_CEDENTE_4, TAB_I2A12_CPF_CNPJ_CEDENTE_5, TAB_I2A12_CPF_CNPJ_CEDENTE_6,
+              TAB_I2A12_CPF_CNPJ_CEDENTE_7, TAB_I2A12_CPF_CNPJ_CEDENTE_8, TAB_I2A12_CPF_CNPJ_CEDENTE_9]
+    aggregate: list
+    item: I.2.a.12
+    note: Nine slots. Participation percentages are the matching TAB_I2A12_PR_CEDENTE_n columns.
+  cedentes_com_risco_pr:
+    tab: I
+    columns: [TAB_I2A12_PR_CEDENTE_1, TAB_I2A12_PR_CEDENTE_2, TAB_I2A12_PR_CEDENTE_3, TAB_I2A12_PR_CEDENTE_4,
+              TAB_I2A12_PR_CEDENTE_5, TAB_I2A12_PR_CEDENTE_6, TAB_I2A12_PR_CEDENTE_7, TAB_I2A12_PR_CEDENTE_8,
+              TAB_I2A12_PR_CEDENTE_9]
+    aggregate: list
+    item: I.2.a.12
+  cedentes_sem_risco:
+    tab: I
+    columns: [TAB_I2B12_CPF_CNPJ_CEDENTE_1, TAB_I2B12_CPF_CNPJ_CEDENTE_2, TAB_I2B12_CPF_CNPJ_CEDENTE_3,
+              TAB_I2B12_CPF_CNPJ_CEDENTE_4, TAB_I2B12_CPF_CNPJ_CEDENTE_5, TAB_I2B12_CPF_CNPJ_CEDENTE_6,
+              TAB_I2B12_CPF_CNPJ_CEDENTE_7, TAB_I2B12_CPF_CNPJ_CEDENTE_8, TAB_I2B12_CPF_CNPJ_CEDENTE_9]
+    aggregate: list
+    item: I.2.b.12
+  cedentes_sem_risco_pr:
+    tab: I
+    columns: [TAB_I2B12_PR_CEDENTE_1, TAB_I2B12_PR_CEDENTE_2, TAB_I2B12_PR_CEDENTE_3, TAB_I2B12_PR_CEDENTE_4,
+              TAB_I2B12_PR_CEDENTE_5, TAB_I2B12_PR_CEDENTE_6, TAB_I2B12_PR_CEDENTE_7, TAB_I2B12_PR_CEDENTE_8,
+              TAB_I2B12_PR_CEDENTE_9]
+    aggregate: list
+    item: I.2.b.12
+
+  # ---- segment mix (filter iii of the screen) ----------------------------
+  carteira_segmento:       {tab: II, column: TAB_II_VL_CARTEIRA,  item: II}
+  seg_industrial:          {tab: II, column: TAB_II_A_VL_INDUST,  item: II.a}
+  seg_imobiliario:         {tab: II, column: TAB_II_B_VL_IMOBIL,  item: II.b}
+  seg_comercial:           {tab: II, column: TAB_II_C_VL_COMERC,  item: II.c}
+  seg_servicos:            {tab: II, column: TAB_II_D_VL_SERV,    item: II.d}
+  seg_agronegocio:         {tab: II, column: TAB_II_E_VL_AGRONEG, item: II.e}
+  seg_financeiro:          {tab: II, column: TAB_II_F_VL_FINANC,  item: II.f}
+  seg_consignado:          {tab: II, column: TAB_II_F2_VL_CRED_PESSOA_CONSIG, item: II.f.2}
+
+  # ---- negócios no mês (the recompra pathology) --------------------------
+  aquisicoes_com_risco:    {tab: VII, column: TAB_VII_A1_2_VL_DIRCRED_RISCO,     item: VII.a.1.2}
+  aquisicoes_sem_risco:    {tab: VII, column: TAB_VII_A2_2_VL_DIRCRED_SEM_RISCO, item: VII.a.2.2}
+  alienacoes_ao_cedente:   {tab: VII, column: TAB_VII_B1_2_VL_CEDENTE,   item: VII.b.1.2, note: "Para o Cedente e Partes Relacionadas aos Cedentes"}
+  alienacoes_a_prestador:  {tab: VII, column: TAB_VII_B2_2_VL_PREST,     item: VII.b.2.2}
+  alienacoes_a_terceiros:  {tab: VII, column: TAB_VII_B3_2_VL_TERCEIRO,  item: VII.b.3.2}
+  substituicoes:           {tab: VII, column: TAB_VII_C_2_VL_SUBST,          item: VII.c.2}
+  substituicoes_contabil:  {tab: VII, column: TAB_VII_C_3_VL_CONTAB_SUBST,   item: VII.c.3}
+  recompras:               {tab: VII, column: TAB_VII_D_2_VL_RECOMPRA,       item: VII.d.2}
+  recompras_contabil:      {tab: VII, column: TAB_VII_D_3_VL_CONTAB_RECOMPRA, item: VII.d.3}
+  recompras_qt:            {tab: VII, column: TAB_VII_D_1_QT_RECOMPRA,       item: VII.d.1}
+  qt_cedentes_alienacao:   {tab: VII, column: TAB_VII_B1_1_QT_CEDENTE,       item: VII.b.1.1}
+
+  # ---- ageing ladder -----------------------------------------------------
+  # Tab V = com aquisição substancial dos riscos; Tab VI = sem. Bands are EXCLUSIVE ranges, confirmed in the
+  # dictionary: b.1 "entre 1 e 30 dias", b.6 "entre 151 e 180", b.7 "entre 181 e 360". So the 180+ bucket is b.7..b.10.
+  inad_total:              {tab: [V, VI], column: [TAB_V_B_VL_DIRCRED_INAD, TAB_VI_B_VL_DIRCRED_INAD], aggregate: sum, item: V.b/VI.b}
+  inad_ate_30:             {tab: [V, VI], column: [TAB_V_B1_VL_INAD_30, TAB_VI_B1_VL_INAD_30], aggregate: sum, item: V.b.1}
+  inad_90_mais:
+    tab: [V, VI]
+    column: [TAB_V_B4_VL_INAD_120, TAB_V_B5_VL_INAD_150, TAB_V_B6_VL_INAD_180, TAB_V_B7_VL_INAD_360,
+             TAB_V_B8_VL_INAD_720, TAB_V_B9_VL_INAD_1080, TAB_V_B10_VL_INAD_MAIOR_1080,
+             TAB_VI_B4_VL_INAD_120, TAB_VI_B5_VL_INAD_150, TAB_VI_B6_VL_INAD_180, TAB_VI_B7_VL_INAD_360,
+             TAB_VI_B8_VL_INAD_720, TAB_VI_B9_VL_INAD_1080, TAB_VI_B10_VL_INAD_MAIOR_1080]
+    aggregate: sum
+    note: "Vencidos acima de 90 dias: bands b.4 (91-120) through b.10 (>1080), both risk blocks."
+  inad_180_mais:
+    tab: [V, VI]
+    column: [TAB_V_B7_VL_INAD_360, TAB_V_B8_VL_INAD_720, TAB_V_B9_VL_INAD_1080, TAB_V_B10_VL_INAD_MAIOR_1080,
+             TAB_VI_B7_VL_INAD_360, TAB_VI_B8_VL_INAD_720, TAB_VI_B9_VL_INAD_1080, TAB_VI_B10_VL_INAD_MAIOR_1080]
+    aggregate: sum
+    note: "The 180+ bucket of primary condition D: bands b.7 (181-360) and beyond, both risk blocks."
+  a_vencer_total:          {tab: [V, VI], column: [TAB_V_A_VL_DIRCRED_PRAZO, TAB_VI_A_VL_DIRCRED_PRAZO], aggregate: sum, item: V.a/VI.a}
+  pagos_antecipadamente:   {tab: [V, VI], column: [TAB_V_C_VL_DIRCRED_ANTECIPADO, TAB_VI_C_VL_DIRCRED_ANTECIPADO], aggregate: sum, item: V.c/VI.c}
+
+  # ---- quotas, returns, redemptions, liquidity ---------------------------
+  # These are LONG tables: one row per class/series per month, labelled by TAB_X_CLASSE_SERIE, whose value begins
+  # with "Subclasse Senior" or "Subclasse Subordinada" (the mezzanine is a subordinada variant). Match on prefix.
+  rentabilidade_mes:       {tab: X_3, column: TAB_X_VL_RENTAB_MES, label: TAB_X_CLASSE_SERIE, item: X.3}
+  qt_cota:                 {tab: X_2, column: TAB_X_QT_COTA, label: TAB_X_CLASSE_SERIE, item: X.2}
+  vl_cota:                 {tab: X_2, column: TAB_X_VL_COTA, label: TAB_X_CLASSE_SERIE, item: X.2}
+  nr_cotistas:             {tab: X_1, column: TAB_X_NR_COTST, label: TAB_X_CLASSE_SERIE, item: X.1}
+  desempenho_esperado:     {tab: X_6, column: TAB_X_PR_DESEMP_ESPERADO, label: TAB_X_CLASSE_SERIE, item: X.6}
+  desempenho_real:         {tab: X_6, column: TAB_X_PR_DESEMP_REAL, label: TAB_X_CLASSE_SERIE, item: X.6}
+  captacoes:               {tab: X_4, column: TAB_X_VL_TOTAL, filter: {TAB_X_TP_OPER: "Captações no Mês"}, item: X.4}
+  resgates:                {tab: X_4, column: TAB_X_VL_TOTAL, filter: {TAB_X_TP_OPER: "Resgates no Mês"}, item: X.4}
+  amortizacoes:            {tab: X_4, column: TAB_X_VL_TOTAL, filter: {TAB_X_TP_OPER: "Amortizações"}, item: X.4}
+  resgates_solicitados:
+    tab: X_4
+    column: TAB_X_VL_TOTAL
+    filter: {TAB_X_TP_OPER: "Resgates Solicitados"}
+    item: X.4
+    note: >
+      The RESG_SOLIC of business case 2.1. It is a row of X.4, not a column. Requested redemptions outstanding for
+      two months is a secondary break signal, and a class closed for redemptions is filter (i) of the 3.6 screen.
+  liquidez_imediata:       {tab: X_5, column: TAB_X_VL_LIQUIDEZ_0, item: X.5}
+
+  # ---- 25 maiores sacados (the D dimension — see the flag) ---------------
+  maiores_sacados_valor:
+    tab: VIII
+    column: VALOR
+    label: SEQUENCIAL
+    item: VIII
+    note: >
+      FLAG. The open-data CSV carries rank and value only. There is no CPF/CNPJ and no % of PL, contrary to
+      business case 2.1. Identity, if it is public at all, is in the informe as filed on Fundos.NET. BACKLOG #2.
+
+class_series:
+  senior_prefix: "Subclasse Senior"
+  subordinada_prefix: "Subclasse Subordinada"
+  note: >
+    Observed values in 2026-08 include "Subclasse Senior", "Subclasse Senior Série 1", "Subclasse Subordinada
+    Mezanino 1 | Série 1" and "Subclasse Subordinada Subordinada 1 |". Match by prefix, never by equality.
+    A class can carry several senior series; aggregate by value-weighted quota count when one senior number is needed.
