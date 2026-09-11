@@ -1,0 +1,83 @@
+# VAZANTE thresholds. Every number is ASSUMPTION unless the comment says MODEL or VERIFIED.
+# Source: docs/01_business_case_final_2026-09-10.md — the section is in [brackets]. Change here, not in code.
+
+breakflag:                            # [2.4] fit on the labelled break-date set before the first live pack (BACKLOG #4)
+  recompra_intensity_max: 0.03        # A — recompras ÷ carteira per month
+  recompra_vs_trailing_median: 2.0    # A (alternative trigger) — × the fund's own trailing-12 median
+  churn_to_default_min: 0.35          # B — churn-to-default migration
+  pdd_coverage_min: 0.60              # C — PDD ÷ 90+ vencidos
+  senior_return_stdev_max: 0.0015     # D — 12-month stdev of senior-quota return (0.15 percentage points)
+  bucket_180_growth_min: 0.50         # D — the 180+ bucket grew more than 50%
+  primary_conditions_required: 3      # of the four primaries A–D
+  consecutive_months: 2
+  t_stop_fraction_of_peak: 0.25       # t_stop: intensity falls below a quarter of its trailing peak and stays there
+  dark_months_widen_factor: 2.0       # informe dark two months or more → widen the band ~2×, drop the floor 30%
+  dark_months_floor_drop: 0.30
+
+screen:                               # [3.6] the five filters that find Deal 1
+  closed_for_redemptions_business_days_min: 5
+  pdd_share_of_carteira_min: 0.25
+  industrial_plus_comercial_share_min: 0.60
+  pl_min_brl: 85000000
+  pl_preferred_brl: 100000000
+  gestor_must_be_active_and_distinct_from_admin: true
+
+pack:                                 # [2.5]
+  informe_face_min_brl: 85000000      # below this, do not build a pack (kill condition 3 from informe face alone)
+  weekly_top_n: 20
+  packs_per_week_max: 5
+  day1_band_min_ratio: 1.5            # the Day-1 range cannot honestly be tighter than ~1.5× top to bottom
+
+rules:                                # [1, 7.1, 9.4]
+  cover_ratio_tax_inside: 1.20        # FIRM onward proceeds ÷ all-in basis (bid + non-purchase costs + tax)
+  cover_ratio_pre_tax_equivalent: 1.45
+  payout_cap_per_real_of_L:           # (bid + non-purchase costs) ÷ L — inferido from 7.1; the doc says "~73¢", "72¢", "80¢"
+    ltda: 0.735
+    factoring: 0.72
+    fidc_wrapper: 0.80
+  documented_face_floor_brl: 60000000
+  informe_face_floor_brl: 85000000
+  hurdle_after_tax_brl:
+    deals_1_to_5: 1500000
+    deals_6_to_9: 2000000
+    deals_10_plus: 2500000
+  counterparty_share_of_locked_max: 0.40
+  unhedged_basis_max_x_after_tax_contribution: 3.0
+  seller_arras_pct_of_price: [0.03, 0.05]
+  seller_retention_pct_of_price: [0.15, 0.22]
+  seller_retention_days_data_warranties: 120
+  seller_retention_months_existence_title: 24
+  buyer_arras_pct: 0.10
+  buyer_warranty_cap_pct_of_price: 0.20
+  indicative_to_firm_kpi_band: [0.85, 1.15]
+  exclusivity_business_days: [7, 10]
+  never_bid_on_a_parcel: true
+  never_enter_a_competitive_process: true
+
+tax:                                  # [7.1] rate applied to the spread; the BASE is GATED — condition 1 (tax parecer)
+  t1_lucro_real_receita_financeira: 0.371     # base case in the model
+  fidc_np_wrapper_pf_cotista: 0.15
+  t2_factoring_inferido: 0.40                 # inferido: reproduces the doc's R$9.49m max bid
+  t3_adverse_gross_receita_inferido: 0.517    # inferido: reproduces the doc's R$8.56m max bid
+
+oracle:                               # [4.2] and docs/03_forensic_oracle_layer.md
+  census_top_face_share: 0.80         # test the top 80% of face position by position
+  position_materiality_brl: 250000
+  human_signs_every_existence_failure: true
+  human_signs_title_exception_above_brl: 250000
+  premium_cnab_coverage_min: 0.95     # attack 5: 24 months of CNAB covering ≥ 95% of the strip's face
+  premium_model_error_reserve_deals_1_to_3: 0.15
+  cedente_supported_cash_hard_reject: 0.70
+  ties_break_to_lower_grade: true
+
+reference_book:                       # [7.1] MODEL — regression target for the rebuilt economics (the original P5_model.py is lost)
+  informe_face_brl: 210000000
+  documented_face_brl: 150000000
+  positions: 4000
+  locked_proceeds_L_brl: 13953000
+  non_purchase_costs_brl: 578000
+  max_bid_t1_brl: 9679000
+  tax_at_max_bid_brl: 1370000
+  all_in_basis_brl: 11627000
+  after_tax_contribution_brl: 2325000
+  zero_basis_upside_brl: 4738000

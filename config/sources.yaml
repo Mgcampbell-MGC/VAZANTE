@@ -1,0 +1,68 @@
+# Data sources for the desk. `status` is what this environment observed on 2026-09-11 (HTTP probe), not a promise.
+# auth: none | contract | seller (needs the seller's tape/instruction) | browser (captcha or session).
+
+cvm_informe_mensal:
+  url: https://dados.cvm.gov.br/dados/FIDC/DOC/INF_MENSAL/DADOS/
+  gives: every FIDC class, monthly, Tabelas I–X as CSV inside inf_mensal_fidc_YYYYMM.zip (history to 2013, weekly refresh)
+  auth: none
+  status: OK — 202608 fetched (534 KB, 18 members, 664 classes while the filing window was open)
+  note: store dated snapshots; late/restated filings are a signal. Tabela VIII carries rank+value only (see BACKLOG #2).
+cvm_informe_meta:
+  url: https://dados.cvm.gov.br/dados/FIDC/DOC/INF_MENSAL/META/meta_inf_mensal_fidc_txt.zip
+  gives: the CVM field dictionary for the 18 tables
+  auth: none
+  status: OK — copied to docs/reference/cvm_meta_inf_mensal_fidc/
+cvm_cad_fi:
+  url: https://dados.cvm.gov.br/dados/FI/CAD/DADOS/cad_fi.csv
+  gives: cadastro — administrador, gestor, custodiante, auditor, controlador, diretor, situação, PL; daily
+  auth: none
+  status: OK — header verified
+fundos_net:
+  url: https://fnet.bmfbovespa.com.br/fnet/publico/abrirGerenciadorDocumentosCVM
+  gives: regulamento, demonstrações contábeis + parecer, atas, convocações, fatos relevantes, comunicados, lâmina
+  auth: none (browser-style session; scraping to be built)
+  status: OK — landing page 200
+minha_receita:
+  url: https://minhareceita.org/<cnpj>
+  gives: situação cadastral, capital social, QSA, CNAE, address per CNPJ (Receita mirror)
+  auth: none
+  status: OK — 200 on a test CNPJ
+bcb_sgs:
+  url: https://api.bcb.gov.br/dados/serie/bcdata.sgs.<series>/dados
+  gives: CDI and other series (series 12 = CDI daily)
+  auth: none
+  status: OK
+bcb_regimes_especiais:
+  url: https://olinda.bcb.gov.br/olinda/servico/RegimesEspeciais/...   # exact path TO CONFIRM
+  gives: weekly OData of institutions under intervention / liquidação extrajudicial
+  auth: none
+  status: 404 on the guessed path — find the correct OData endpoint (BACKLOG)
+djen_comunica:
+  url: https://comunica.pje.jus.br/api/v1/comunicacao
+  gives: judicial publications by party name (free)
+  auth: none
+  status: connection reset from this environment — may be geo/IP-blocked; test from a Brazilian desk
+nfe_portal:
+  url: https://www.nfe.fazenda.gov.br/portal/
+  gives: NF-e authorisation status by chave de acesso (44 digits)
+  auth: browser (captcha) — the chave itself comes only from the seller's tape
+  status: reachable (302 to portal); consultation needs the seller's chaves — post-exclusivity only
+cenprot:
+  url: https://cenprotnacional.org.br/
+  gives: protest values per CNPJ (blind at cartório level in São Paulo — GATED, test 20 known-protested SP CNPJs)
+  auth: contract for bulk
+  status: landing reachable
+registradoras:
+  cerc: https://www.cerc.inf.br/
+  nuclea: https://www.nuclea.com.br/
+  gives: title — consulta de duplicidade, current holder, competing assignments
+  auth: contract in VAZANTE's own CNPJ — condition 2 of the decision (by 31 Oct 2026)
+  status: landings reachable; no API access until the participant contracts exist
+court_aggregators:
+  gives: per-CNPJ litigation (RJ, falência, execuções) — Jusbrasil/Escavador/Digesto class
+  auth: contract
+  status: not contracted
+serasa_pj:
+  gives: bureau, protest and debt signals per CNPJ
+  auth: contract (R$14k/month data line in the cost base covers Serasa PJ minimum + CENPROT + courts + registradora + Uqbar)
+  status: not contracted

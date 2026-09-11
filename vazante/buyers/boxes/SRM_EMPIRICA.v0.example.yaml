@@ -1,0 +1,38 @@
+# ILLUSTRATIVE — the worked example from docs/02 Part 4. No calibration session has taken place; the date below is a
+# placeholder. Replace this file with the real V0 after the first Premium session, and keep the example under docs/.
+buyer: SRM_EMPIRICA
+role: PREMIUM
+box_version: V0
+box_type: stated            # observed box does not exist until deal 3
+source_events:
+  - {type: calibration_session, date: 2026-09-24, attendee: "[nome], gestor de crédito", status: PLACEHOLDER}
+human_checked_by: MGC
+hard_filters:
+  title_conflict:                 {action: reject,        confidence: CONFIRMED}  # A04
+  missing_xml_where_nfe_expected: {action: reject,        confidence: CONFIRMED}  # A20
+  third_party_cash_below_0_40:    {action: reject,        confidence: CONFIRMED}  # A08
+  cross_portfolio_duplicate_open: {action: reject,        confidence: INFERRED}
+  public_sector_debtor:           {action: reject,        confidence: CONFIRMED}  # A15
+  debtor_in_rj_at_tape_date:      {action: reject,        confidence: CONFIRMED}  # A13
+  related_party_flag:             {action: manual_review, confidence: CONFIRMED}  # A14
+asset_types:
+  duplicata_nfe:          {accept: true,          confidence: CONFIRMED}
+  duplicata_servico_nfse: {accept: false,         confidence: CONFIRMED}  # A25
+  ccb:                    {accept: manual_review, confidence: INFERRED}   # A26 hesitou
+dpd:      {max_weighted: 30, max_position: 90, confidence: CONFIRMED}
+pool:     {min_face: 3000000, max_face: 30000000, confidence: CONFIRMED}
+pricing:
+  - {cond: {maturity: a_vencer, existence: hard_confirmed, title: confirmed, cash_ratio_min: 0.70},
+     price_per_face: 0.75, status: GRID, confidence: CONFIRMED}   # A01 — the S1 test
+  - {cond: {dpd_max: 30, existence: hard_confirmed, title: confirmed, cash_ratio_min: 0.70},
+     price_per_face: 0.25, status: GRID, confidence: CONFIRMED}
+  - {cond: {dpd_max: 30, existence: hard_confirmed, title: legacy_unregistered, cash_ratio_min: 0.70},
+     price_per_face: 0.16, status: GRID, confidence: CONFIRMED}   # A03
+  - {cond: {sacado_written_confirmation: true}, uplift: 0.03, status: GRID, confidence: CONFIRMED}
+capacity: {face_per_month: 20000000, price_per_month: 4000000, carry_forward_months: 0}
+execution: {days_to_indicative: 2, days_to_firm: 3, quote_validity_bd: 10, settlement: "D+2 cash vs termo"}
+retrade:
+  permitted:  [debtor_rj_after_tape_date, registered_competing_assignment_after_tape_date, tape_arithmetic_error_gt_0_5pct]
+  cap_pct_of_lot_price: 10
+  confidence: CONFIRMED
+locked_proceeds_rule: "only status: FIRM enters the 1.20x numerator"

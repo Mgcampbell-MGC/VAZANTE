@@ -1,0 +1,23 @@
+# environment
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env
+*.egg-info/
+dist/
+build/
+
+# data — never commit raw filings, tapes, evidence pulls or bids
+data/raw/
+data/derived/
+data/evidence/
+data/deals/
+data/bids/
+*.zip
+*.parquet
+
+# scratch
+*.part
+.DS_Store
