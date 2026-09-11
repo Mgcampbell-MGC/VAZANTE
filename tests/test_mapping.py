@@ -11,7 +11,8 @@ REQUIRED = [
 
 def test_mapping_is_frozen_and_complete():
     m = load_mapping()
-    assert m["version"] == 1 and m["frozen_on"] == "2026-09-11"
+    assert m["version"] == 1
+    assert str(m["frozen_on"]) == "2026-09-11"  # PyYAML parses an unquoted ISO date into datetime.date
     for concept in REQUIRED:
         assert concept in m["concepts"], f"{concept} missing from the frozen mapping"
 
