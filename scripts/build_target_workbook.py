@@ -54,6 +54,11 @@ def why(r):
         b.append(f"the largest cedente carries R${r.max_cap/1e6:,.0f}m of capital, so recourse runs against someone solvent")
     if pd.notna(r.cart_24m) and r.cart_24m and r.carteira / r.cart_24m - 1 > 0.25:
         b.append("the carteira is still growing, so the manager has not given up and willingness will be hard")
+    import re as _re
+    if _re.search(r"PESSOAL|CONSIGN|CART[AÃ]O|CREDI[AÁ]RIO|VAREJO", str(r.DENOM_SOCIAL).upper()):
+        b.append("CHECK THIS: the fund's own name says consumer credit while the CVM segment table says commercial. "
+                 "One of the two is wrong and the name is the stronger signal, so treat it as consumer until the "
+                 "regulamento says otherwise")
     return ". ".join(x[0].upper() + x[1:] for x in b) + "."
 
 def check(r):
@@ -111,9 +116,9 @@ ws["A2"] = ("Every FIDC class filing with the CVM at competencia July 2026 that 
             "jumped rather than sat still, and no visible captive sponsor. Built 11 September 2026 from CVM open data; cedente names "
             "resolved through the Receita. Sorted best first. Nothing here has been contacted and no price appears anywhere.")
 ws["A2"].font = SUBF; ws["A2"].alignment = WRAP
-ws.merge_cells("A2:T2"); ws.row_dimensions[2].height = 42
+ws.merge_cells("A2:U2"); ws.row_dimensions[2].height = 42
 
-COLS = [("Rank", 6), ("Tier", 22), ("Researched", 17), ("Fund", 44), ("CNPJ", 20),
+COLS = [("Rank", 6), ("Tier", 22), ("Researched", 17), ("Fund", 44), ("CNPJ", 20), ("Orphan lineage", 13),
         ("Carteira R$m", 12), ("PL R$m", 10), ("Provision % of carteira", 12),
         ("Rise above 24m low (pp)", 12), ("Over 180 days %", 11), ("B2B paper %", 11),
         ("Cedentes named", 11), ("In judicial recovery", 12), ("Largest cedente capital R$m", 14),
@@ -127,6 +132,7 @@ r = 5
 for _, x in sub.iterrows():
     f = FT.get(x.Tier)
     vals = [x.Rank, x.Tier, x.Researched, x.DENOM_SOCIAL, x.CNPJ_FUNDO_CLASSE,
+            (x.lineage if isinstance(x.lineage, str) and x.lineage else "-"),
             round(x.carteira / 1e6, 1), round(x.pl / 1e6, 1),
             round(float(x.pdd_share_carteira) * 100, 1) if pd.notna(x.pdd_share_carteira) else None,
             round(float(x.pdd_rise_from_trough) * 100, 1) if pd.notna(x.pdd_rise_from_trough) else None,
@@ -140,9 +146,9 @@ for _, x in sub.iterrows():
         c = ws.cell(row=r, column=i, value=v)
         c.font = BOLD if i == 4 else BODY
         c.border = BOX
-        if i in (2, 3, 4, 16, 17, 18, 19, 20, 21):
+        if i in (2, 3, 4, 17, 18, 19, 20, 21, 22):
             c.alignment = WRAP
-        elif i in (6, 7, 8, 9, 10, 11, 14):
+        elif i in (7, 8, 9, 10, 11, 12, 15):
             c.alignment = Alignment(vertical="top", horizontal="right"); c.number_format = '#,##0.0;(#,##0.0);-'
         else:
             c.alignment = Alignment(vertical="top", horizontal="center")
@@ -151,8 +157,8 @@ for _, x in sub.iterrows():
     ws.row_dimensions[r].height = 92
     r += 1
 LAST = r - 1
-ws.freeze_panes = "F5"
-ws.auto_filter.ref = f"A4:U{LAST}"
+ws.freeze_panes = "G5"
+ws.auto_filter.ref = f"A4:V{LAST}"
 
 s = LAST + 2
 ws.cell(row=s, column=1, value="Summary").font = H2
@@ -168,14 +174,14 @@ summary = [("Funds listed", len(sub)),
            ("Combined carteira of tiers 1 and 2 (R$m)", round(sub[sub.Tier.str.startswith(("1.", "2."))].carteira.sum() / 1e6, 1))]
 for j, (k, v) in enumerate(summary):
     a = ws.cell(row=s + 1 + j, column=1, value=k); a.font = BODY
-    ws.merge_cells(start_row=s + 1 + j, start_column=1, end_row=s + 1 + j, end_column=5)
-    b = ws.cell(row=s + 1 + j, column=6, value=v); b.font = BOLD; b.fill = BAND; b.border = BOX
+    ws.merge_cells(start_row=s + 1 + j, start_column=1, end_row=s + 1 + j, end_column=6)
+    b = ws.cell(row=s + 1 + j, column=7, value=v); b.font = BOLD; b.fill = BAND; b.border = BOX
     b.number_format = '#,##0.0' if isinstance(v, float) else '#,##0'
 
 n = s + len(summary) + 2
 ws.cell(row=n, column=1, value=("No price appears in this workbook by design. Under the desk's own rules a bid exists only once a seller tape "
                                 "has been verified and three firm onward exits cover the all-in basis, tax included, by 1.20 times.")).font = SUBF
-ws.merge_cells(start_row=n, start_column=1, end_row=n, end_column=21)
+ws.merge_cells(start_row=n, start_column=1, end_row=n, end_column=22)
 ws.cell(row=n, column=1).alignment = WRAP; ws.row_dimensions[n].height = 30
 
 # ---------------------------------------------------------------- Cedentes
@@ -313,6 +319,194 @@ for h, b in blocks:
     c = w4.cell(row=rw, column=2, value=b); c.font = BODY; c.alignment = WRAP; c.border = BOX
     w4.row_dimensions[rw].height = max(50, 14 * (len(b) // 98 + 1))
     rw += 1
+
+
+# ---------------------------------------------------------------- Start here
+w0 = wb.create_sheet("Start here", 0)
+w0.column_dimensions["A"].width = 4
+w0.column_dimensions["B"].width = 52
+w0.column_dimensions["C"].width = 16
+w0.column_dimensions["D"].width = 16
+w0.column_dimensions["E"].width = 62
+w0.sheet_view.showGridLines = False
+
+BIG = Font(name=A, size=40, bold=True, color="1F3864")
+LBL = Font(name=A, size=13, color="404040")
+
+w0["B2"] = "VAZANTE - how many funds can we attack"
+w0["B2"].font = TITLE
+w0.row_dimensions[2].height = 30
+w0["B3"] = "Every FIDC filing with the CVM at competencia July 2026, screened and researched. Built 11 September 2026."
+w0["B3"].font = SUBF
+w0.merge_cells("B3:E3")
+
+live = sub[~sub.captive_flag]
+w0["B5"] = str(len(live)); w0["B5"].font = BIG
+w0.row_dimensions[5].height = 52
+w0["C5"] = "funds you can attack"; w0["C5"].font = LBL
+w0["C5"].alignment = Alignment(vertical="center")
+w0.merge_cells("C5:E5")
+
+ngest = live.Gestor.nunique()
+w0["B6"] = str(ngest); w0["B6"].font = BIG
+w0.row_dimensions[6].height = 52
+w0["C6"] = "conversations, because several funds share one gestora"; w0["C6"].font = LBL
+w0["C6"].alignment = Alignment(vertical="center")
+w0.merge_cells("C6:E6")
+
+r0 = 8
+w0.cell(row=r0, column=2, value="How the 4,321 FIDCs narrow down").font = H2
+funnel = [
+    ("FIDC classes filing with the CVM in July 2026", 4321),
+    ("Provision at or above 25% of the carteira, so the loss is already booked", 420),
+    ("Business-to-business paper, industrial plus commercial, at least 60%", 94),
+    ("No material retail consumer credit", 91),
+    ("The provision jumped at least 10 points above its own 24-month low", 85),
+    ("No named cedente above half of the fund's equity", 47),
+    ("Carteira of at least R$5m", len(sub)),
+    ("Minus the captive sponsor books, found by research and by fund name", len(live)),
+]
+for j, (lbl, n) in enumerate(funnel):
+    a = w0.cell(row=r0 + 1 + j, column=2, value=lbl); a.font = BODY; a.alignment = WRAP
+    w0.merge_cells(start_row=r0 + 1 + j, start_column=2, end_row=r0 + 1 + j, end_column=4)
+    b = w0.cell(row=r0 + 1 + j, column=5, value=n)
+    b.font = BOLD if j == len(funnel) - 1 else BODY
+    b.number_format = '#,##0'; b.border = BOX
+    b.alignment = Alignment(horizontal="left", vertical="center")
+    if j == len(funnel) - 1:
+        b.fill = PatternFill("solid", fgColor="C6E0B4")
+    w0.row_dimensions[r0 + 1 + j].height = 22
+
+r1 = r0 + len(funnel) + 3
+w0.cell(row=r1, column=2, value="By size, and why the clusters matter").font = H2
+bands = [("R$60m and above - can carry a trade alone", live[live.carteira >= 60e6]),
+         ("R$25m to R$60m - needs bundling", live[(live.carteira >= 25e6) & (live.carteira < 60e6)]),
+         ("Under R$25m - the natural first trade", live[live.carteira < 25e6])]
+head(w0, r1 + 1, ["", "Size band", "Funds", "Carteira R$m", "Why it matters"])
+for j, (lbl, dfb) in enumerate(bands):
+    rw = r1 + 2 + j
+    c = w0.cell(row=rw, column=2, value=lbl); c.font = BODY; c.alignment = WRAP; c.border = BOX
+    n = w0.cell(row=rw, column=3, value=len(dfb)); n.font = BOLD; n.border = BOX
+    n.alignment = Alignment(horizontal="center")
+    v = w0.cell(row=rw, column=4, value=round(dfb.carteira.sum() / 1e6, 0)); v.font = BODY; v.border = BOX
+    v.number_format = '#,##0'; v.alignment = Alignment(horizontal="right")
+    note = ["Only these four are a trade on their own.",
+            "Below the R$60m floor alone, but a bundle from one gestora clears it.",
+            "Small enough to be the first trade, which is what the business case asks for."][j]
+    t_ = w0.cell(row=rw, column=5, value=note); t_.font = BODY; t_.alignment = WRAP; t_.border = BOX
+    w0.row_dimensions[rw].height = 32
+
+r2 = r1 + len(bands) + 4
+w0.cell(row=r2, column=2, value="Start with these").font = H2
+head(w0, r2 + 1, ["", "Fund", "Carteira R$m", "Gestora", "Why it leads"])
+lead_notes = {
+    0: "Largest, and the only one checked against the public record without being disqualified. Sourced by a factoring house barred from selling its own credits.",
+    1: "Two quota-holders, so one institution decides. One cedente already in judicial recovery, so the recourse claim is real.",
+    2: "One cedente in judicial recovery. Same gestora as three others, so one call reaches four funds.",
+    3: "Clears the floor on its own. Not yet researched.",
+    4: "Five cedentes named, which is what a genuine multicedente book looks like.",
+}
+for j, (_, x) in enumerate(live.sort_values("carteira", ascending=False).head(5).iterrows()):
+    rw = r2 + 2 + j
+    c = w0.cell(row=rw, column=2, value=x.DENOM_SOCIAL[:58]); c.font = BOLD; c.alignment = WRAP; c.border = BOX
+    v = w0.cell(row=rw, column=3, value=round(x.carteira / 1e6, 0)); v.font = BODY; v.border = BOX
+    v.number_format = '#,##0'; v.alignment = Alignment(horizontal="right")
+    g_ = w0.cell(row=rw, column=4, value=str(x.Gestor)[:30]); g_.font = BODY; g_.alignment = WRAP; g_.border = BOX
+    n_ = w0.cell(row=rw, column=5, value=lead_notes.get(j, "")); n_.font = BODY; n_.alignment = WRAP; n_.border = BOX
+    w0.row_dimensions[rw].height = 44
+
+r3 = r2 + 8
+notes = [
+    ("The one caveat that matters",
+     ("Willingness is untested. Every fund here passes on paper, size and provision, but nothing in the CVM data says whether "
+     "the person holding the pen will crystallise a loss. Expect roughly seven in ten to die there. Twenty-five funds gets you "
+     "to about seven or eight trades against a plan that needs six to ten, so it works with no margin.")),
+    ("What the other tabs hold",
+     ("Targets is all 36 funds including the 11 excluded, with the reason on each row. Who to call has the telephone, "
+     "city and registered officers of every gestora and administrador. Cedentes names who owes the money and flags those "
+     "in judicial recovery. Clusters shows which gestoras hold more than one fund. How to read this covers the method.")),
+    ("The orphaned estates are not a separate opportunity",
+     ("780 FIDC classes were orphaned when Trustee, Banvox, Master, CBSF, Sefer and Reag failed. 531 still file. Seventy percent "
+     "of their R$118bn is financial-sector paper the desk cannot resell, and the nine worth having are already in this list, "
+     "marked in the Orphan lineage column. There is no bulk trade with a receiver.")),
+]
+for h, b in notes:
+    a = w0.cell(row=r3, column=2, value=h); a.font = Font(name=A, size=12, bold=True, color="1F3864")
+    a.alignment = WRAP; a.fill = BAND; a.border = BOX
+    c = w0.cell(row=r3, column=3, value=b); c.font = BODY; c.alignment = WRAP; c.border = BOX
+    w0.merge_cells(start_row=r3, start_column=3, end_row=r3, end_column=5)
+    w0.row_dimensions[r3] = w0.row_dimensions[r3]
+    w0.row_dimensions[r3].height = max(46, 13 * (len(b) // 105 + 1))
+    r3 += 1
+
+
+# ---------------------------------------------------------------- Who to call
+import pandas as _pd
+
+_ct = _pd.read_pickle("/home/user/VAZANTE/data/derived/contacts.pkl")
+w5 = wb.create_sheet("Who to call")
+w5["A1"] = "Who to call"; w5["A1"].font = TITLE; w5.row_dimensions[1].height = 28
+w5["A2"] = ("Every gestora and administrador behind the funds you can attack, sorted by how much carteira each one reaches. "
+            "Telephone, city, CNPJ and the registered officers all come from the Receita, which is public. Where two "
+            "entities share a switchboard or two or more officers they are marked as one house: calling either reaches "
+            "both roles. No one here has been contacted.")
+w5["A2"].font = SUBF; w5["A2"].alignment = WRAP; w5.merge_cells("A2:J2"); w5.row_dimensions[2].height = 46
+C5 = [("Role", 14), ("House", 10), ("Name", 42), ("Funds", 8), ("Carteira reached R$m", 13), ("Telephone", 15),
+      ("City", 22), ("CNPJ", 19), ("Registered officers", 62), ("The funds they hold", 60)]
+head(w5, 4, [c[0] for c in C5])
+for i, (_, w) in enumerate(C5, 1):
+    w5.column_dimensions[get_column_letter(i)].width = w
+_ct = _ct.sort_values("carteira_Rm", ascending=False)
+rw5 = 5
+for _, x in _ct.iterrows():
+    tel = str(x.phone)
+    tel = f"+55 {tel[:2]} {tel[2:6]}-{tel[6:]}" if len(tel) == 10 else (f"+55 {tel[:2]} {tel[2:7]}-{tel[7:]}" if len(tel) == 11 else tel)
+    cn = str(x.cnpj)
+    cn = f"{cn[:2]}.{cn[2:5]}.{cn[5:8]}/{cn[8:12]}-{cn[12:]}" if len(cn) == 14 else cn
+    vals = [x.role, x.house or "-", x["name"], int(x.funds), round(x.carteira_Rm, 1), tel,
+            x.city, cn, x.socios, x.fund_list]
+    for i, v in enumerate(vals, 1):
+        c = w5.cell(row=rw5, column=i, value=v)
+        c.font = BOLD if i == 3 else BODY
+        c.border = BOX
+        if i == 5:
+            c.number_format = '#,##0.0'; c.alignment = Alignment(vertical="top", horizontal="right")
+        elif i in (3, 9, 10):
+            c.alignment = WRAP
+        else:
+            c.alignment = Alignment(vertical="top", horizontal="center" if i in (2, 4) else "left")
+        if x.role == "Gestora":
+            c.fill = PatternFill("solid", fgColor="EAF1DD")
+    w5.row_dimensions[rw5].height = 46
+    rw5 += 1
+w5.freeze_panes = "D5"
+w5.auto_filter.ref = f"A4:J{rw5-1}"
+
+_n = rw5 + 1
+for _h, _b in [
+    ("Read the gestora rows first",
+     ("The gestora decides what the fund does with its carteira and the administrador signs. Both matter, but the "
+     "gestora is the conversation. Gestora rows are shaded green.")),
+    ("Three names you already know",
+     ("Fram Capital manages one of these funds and is on your own buyer list as a Premium buyer, already emailed. BRZ "
+     "Gestao manages another and is a named deal in your book. Solis manages the largest fund on the list, and the "
+     "business case says to skip committee-heavy houses for the first few deals.")),
+    ("Four pairs are really one house each",
+     ("Finaxis and Petra share three officers. Actual and Libertas share a switchboard and two officers, and between "
+     "them touch seven fund slots. Intra DTVM and Intra Black share a switchboard. Oliveira Trust DTVM and Oliveira "
+     "Trust Servicer share five officers.")),
+    ("What is missing",
+     ("The Receita publishes a switchboard, not a direct line, and no email for any of these. The named officers are "
+     "the registered partners, which is who to ask for. The diretor responsavel for each specific fund is in the "
+     "Targets tab, and that is the person who signs.")),
+]:
+    a = w5.cell(row=_n, column=1, value=_h); a.font = Font(name=A, size=12, bold=True, color="1F3864")
+    a.alignment = WRAP; a.fill = BAND; a.border = BOX
+    w5.merge_cells(start_row=_n, start_column=1, end_row=_n, end_column=3)
+    c = w5.cell(row=_n, column=4, value=_b); c.font = BODY; c.alignment = WRAP; c.border = BOX
+    w5.merge_cells(start_row=_n, start_column=4, end_row=_n, end_column=10)
+    w5.row_dimensions[_n].height = max(40, 13 * (len(_b) // 110 + 1))
+    _n += 1
 
 for s_ in wb.worksheets:
     s_.sheet_view.showGridLines = False

@@ -1,5 +1,22 @@
 # The funds we can go after
 
+**The number is 25 funds, reached through 15 conversations.** Of 4,321 FIDC classes filing with the CVM in July
+2026, 36 pass the screen and 11 of those are captive sponsor books. The 25 that remain hold R$1,583m of carteira.
+Four clear R$60m on their own; seven sit between R$25m and R$60m and need bundling; fourteen are under R$25m and
+are the natural first trade. Contact details for all 27 gestoras and administradores, with registered officers,
+are in the Who to call tab of `out/VAZANTE_targets_2026-09-11.xlsx`.
+
+Four pairs of counterparties turn out to be one house each, which matters for who you actually ring. Finaxis and
+Petra share three officers. Actual and Libertas share a switchboard and two officers and between them touch seven
+fund slots. Intra DTVM and Intra Black share a switchboard. Oliveira Trust DTVM and Oliveira Trust Servicer share
+five. And three names are already in Sutphin's book: Fram Capital manages one of these funds and sits on the
+buyer list as a Premium buyer already emailed, BRZ Gestao manages another and is a named deal, and Solis manages
+the largest fund on the list.
+
+One flag on the fourth-largest name. K-Fundo's own title says credito pessoal, which is consumer credit, while
+the CVM segment table reports it as 100 percent commercial. One of the two is wrong, the name is the stronger
+signal, and it should be treated as consumer until the regulamento settles it.
+
 > **UPDATED 11 September 2026, after desk research.** Thirteen of the eighteen original names were researched
 > against the public record. Two conclusions changed the list materially and are carried through below.
 > **Del Cred NP is a false positive**: it is the securitisation vehicle of the Del Cred fomento mercantil group
