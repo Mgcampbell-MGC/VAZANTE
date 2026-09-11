@@ -21,3 +21,6 @@ data/bids/
 # scratch
 *.part
 .DS_Store
+
+# generated deliverables (regenerate with scripts/build_target_workbook.py)
+out/

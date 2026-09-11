@@ -1,5 +1,23 @@
 # The funds we can go after
 
+> **UPDATED 11 September 2026, after desk research.** Thirteen of the eighteen original names were researched
+> against the public record. Two conclusions changed the list materially and are carried through below.
+> **Del Cred NP is a false positive**: it is the securitisation vehicle of the Del Cred fomento mercantil group
+> of Aracaju, Sergipe, and the fund carries the sponsor's own name. It was Tier 1 and is now excluded.
+> **Daniele Multiplo is the new best name**: R$721m of carteira, sourced by Daniele Banco, a Sao Paulo factoring
+> house that acts as consultora and collection agent and is expressly barred by the regulamento from selling its
+> own credits, which is the definition of a genuine multicedente book.
+>
+> Two method corrections also came out of it. The provision test must measure the rise above the fund's own
+> 24-month low, not a twelve-month difference: Daniele Multiplo rose 21.7 points over two years and fell 1.3
+> over the last twelve, so a twelve-month test dropped the best name on the list. And sponsors rename funds off
+> their own name to hide the link, which is how two captive Albaugh vehicles reached the first list: Agro Capital
+> Finance was FIDC Albaugh I until December 2025, and Workcap Agro was FIDC Albaugh.
+>
+> The full ranked list, with every cedente resolved, is the workbook at `out/VAZANTE_targets_2026-09-11.xlsx`,
+> rebuilt by `scripts/build_target_workbook.py`.
+
+
 11 September 2026. Derived from all 4,321 FIDC classes filing with the CVM at competência 2026-07, with every
 cedente CNPJ resolved through the Receita. Reproduce with `.venv/bin/python scripts/screen.py`; the full set is
 `data/derived/target_universe.csv`, cedente identities in `data/derived/cedentes_resolved.json`.

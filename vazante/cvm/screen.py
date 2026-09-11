@@ -10,7 +10,10 @@ Three corrections were measured on the 2026-07 population and are applied here:
 
   2. THE PROVISION MUST BE AN EVENT, NOT A LEVEL. Several strategies carry a permanently high provision by
      design; a consumer or microcredit book at 30% for three years is a business model, not distress. The test
-     is therefore a rise of at least 10 percentage points over twelve months, not a level.
+     is a rise of at least 10 percentage points measured from the LOWEST point in the previous 24 months, not a
+     twelve-month difference. A twelve-month difference misses a book that broke eighteen months ago and has
+     been flat since: Daniele Multiplo rose 21.7 points over 24 months but fell 1.3 points over the last 12,
+     and a twelve-month test dropped it even though it is one of the better-shaped books in the market.
 
   3. CAPTIVE ORIGINATOR BOOKS ARE EXCLUDED WHERE VISIBLE. A single sponsor originating the whole book has no
      heterogeneity to decompose and no third party to resell to. Where the administrador names cedentes, a
@@ -86,12 +89,12 @@ def enrich(month: str = "202607") -> pd.DataFrame:
     cur = cur.merge(ced, on=KEY, how="left")
 
     piv = ind.pivot_table(index=KEY, columns="month", values="pdd_share_carteira", aggfunc="last")
-    months = sorted(ind.month.unique())
-    i = months.index(month)
-    prior = months[i - 12] if i >= 12 else None
-    traj = pd.DataFrame({"pdd_now": piv.get(month)}).reset_index()
-    traj["pdd_12m_ago"] = piv.get(prior).values if prior else np.nan
-    traj["pdd_jump_12m"] = traj.pdd_now - traj.pdd_12m_ago
+    months = [m for m in sorted(piv.columns) if m <= month]
+    window = piv[months[-25:]]          # the 24 months before `month`, plus `month` itself
+    traj = pd.DataFrame({"pdd_now": window[month]}).reset_index()
+    traj["pdd_trough_24m"] = window.min(axis=1).values
+    traj["pdd_24m_ago"] = window[months[-25]].values if len(months) >= 25 else np.nan
+    traj["pdd_rise_from_trough"] = traj.pdd_now - traj.pdd_trough_24m
     return cur.merge(traj, on=KEY, how="left")
 
 
@@ -103,7 +106,7 @@ def apply_filters(cur: pd.DataFrame) -> pd.DataFrame:
     cur["g_loss_booked"] = cur.pdd_share_carteira >= t["pdd_share_of_carteira_min"]
     cur["g_b2b"] = cur.b2b_share >= t["industrial_plus_comercial_share_min"]
     cur["g_no_retail"] = cur.varejo_share.fillna(0) < 0.10
-    cur["g_provision_is_event"] = cur.pdd_jump_12m >= 0.10
+    cur["g_provision_is_event"] = cur.pdd_rise_from_trough >= 0.10
     cur["g_not_captive_visible"] = cur.max_cedente_pct.fillna(0) < 50
     cur["g_size"] = cur.carteira >= 60e6
     cur["g_gestor"] = cur.Gestor.notna() & (
@@ -116,7 +119,7 @@ GATES = [
     ("g_loss_booked", "loss already booked: provision >= 25% of carteira"),
     ("g_b2b", "business-to-business paper: industrial + comercial(c.1) >= 60%"),
     ("g_no_retail", "no material retail consumer credit: varejo < 10%"),
-    ("g_provision_is_event", "the provision is an event: +10pp over 12 months"),
+    ("g_provision_is_event", "the provision is an event: +10pp above its 24-month low"),
     ("g_not_captive_visible", "not visibly captive: no named cedente above 50% of PL"),
     ("g_size", "carteira >= R$60m"),
     ("g_gestor", "gestor present and distinct from the administrador"),
