@@ -1,5 +1,12 @@
 # The 18, and what they turned out to be
 
+
+> **SUPERSEDED ON THE COUNT, 12 September 2026.** This document says **18**. The current number is **25**,
+> and it is in `docs/TARGETS.md` and `data/derived/lot_plan.csv`. The 18 was the first screen run, before two
+> corrections: the provision test was changed to measure the rise above each fund's own 24-month low rather
+> than a 12-month difference, and captive sponsor books were reclassified. **Nobody says 18 out loud.** The
+> analysis below is kept because its reasoning is still good; only the count is stale.
+
 Answer to MGC, 11 September 2026. The screen's first run produced 18 names. This is what they are, what the
 screen got wrong, and what a corrected screen produces instead.
 
