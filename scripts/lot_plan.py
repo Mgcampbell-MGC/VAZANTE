@@ -24,15 +24,15 @@ def main() -> None:
     plan = carve_universe(q).sort_values("carteira", ascending=False)
     plan.to_csv(OUT, index=False)
 
-    lots = ["lot_A", "lot_B", "lot_C", "lot_D", "lot_E"]
+    lots = ["lot_A", "lot_A2", "lot_B", "lot_C", "lot_D", "lot_E"]
     print(f"{len(plan)} funds · carteira R${plan.carteira.sum() / M:,.0f}m · "
           f"gross face R${plan.gross_face.sum() / M:,.0f}m\n")
     print("Universe by lot (gross face, R$m):")
     for c in lots:
         v = plan[c].sum() / M
         print(f"  {c[-1]}  {v:>8,.0f}   {100 * v / (plan.gross_face.sum() / M):>5.1f}%")
-    print(f"\n  with recourse     {plan.recourse_face.sum() / M:>8,.0f}")
-    print(f"  without recourse  {plan.non_recourse_face.sum() / M:>8,.0f}")
+    print(f"\n  carries recourse (sem risco)  {plan.recourse_face.sum() / M:>8,.0f}")
+    print(f"  true sale (com risco)         {plan.true_sale_face.sum() / M:>8,.0f}")
 
     print("\nLots that are one person's decision (under R$10m) — the fast ones:")
     small = []

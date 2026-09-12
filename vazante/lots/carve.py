@@ -12,9 +12,16 @@ The lot boundary is drawn where the *buyer's* model breaks, not where the
 seller's book breaks.  Four boundaries are already tagged in the fund's own
 monthly filing and need no tape to draw:
 
-1. **Recourse.**  ``dircred_com_risco`` versus ``dircred_sem_risco``.  Paper with
-   coobrigacao is credit risk on the originator; paper without it is credit risk
-   on the debtor.  Those are two different products with two different buyers.
+1. **Recourse.**  Read the CVM field names carefully, because they say the
+   opposite of what they look like.  The split is *aquisicao substancial dos
+   riscos* — who took the loss, not who granted recourse.  ``dircred_com_risco``
+   (I.2.a) means the **fund** took the credit risk, so that paper is a **true
+   sale with no recourse**.  ``dircred_sem_risco`` (I.2.b) means the risk stayed
+   with the cedente, which is **where the recourse lives**.  The frozen mapping
+   says so in terms; this module got it backwards on 12 September 2026 and the
+   error reversed the buyer for three quarters of the book.  Paper with
+   coobrigacao is credit risk on the originator; a true sale is credit risk on
+   the debtor.  Two different products, two different buyers.
 2. **Ageing.**  Tabela IV splits not-yet-due, 1-90, 90-180 and 180-plus.  Each
    bucket has its own pricing method and its own buyer class.
 3. **Cedente status.**  A cedente in recuperacao judicial turns recourse paper
@@ -109,9 +116,13 @@ class Carve:
     name: str
     carteira: float
     provision: float
+    a_vencer: float
+    a_vencer_impaired: float
+    inadimplentes: float
+    in_recovery: float
     buckets: dict[str, float]
     recourse_face: float
-    non_recourse_face: float
+    true_sale_face: float
     recourse_share: float | None
     cedentes_named: int
     cedentes_in_rj: int
@@ -120,7 +131,14 @@ class Carve:
 
     @property
     def gross_face(self) -> float:
-        return sum(self.buckets.values())
+        """Gross face from Tabela I, which is the identity that ties.
+
+        Deliberately *not* the sum of :attr:`buckets`.  Bucket E (credits against
+        companies in judicial recovery) is a status overlay that also appears in
+        the age buckets, so summing them double-counts it; and the age ladder
+        comes from Tabelas V and VI, which do not tie exactly to Tabela I.
+        """
+        return self.a_vencer + self.a_vencer_impaired + self.inadimplentes
 
     def as_row(self) -> dict[str, Any]:
         row: dict[str, Any] = {
@@ -129,8 +147,12 @@ class Carve:
             "carteira": self.carteira,
             "provision": self.provision,
             "gross_face": self.gross_face,
+            "a_vencer": self.a_vencer,
+            "a_vencer_impaired": self.a_vencer_impaired,
+            "inadimplentes": self.inadimplentes,
+            "in_recovery": self.in_recovery,
             "recourse_face": self.recourse_face,
-            "non_recourse_face": self.non_recourse_face,
+            "true_sale_face": self.true_sale_face,
             "recourse_share": self.recourse_share,
             "cedentes_named": self.cedentes_named,
             "cedentes_in_rj": self.cedentes_in_rj,
@@ -155,22 +177,35 @@ def carve_fund(row: pd.Series, *, single_signature_ceiling: float = 10_000_000.0
     person's decision and becomes a committee's.  It is a working assumption,
     not a measured number, and every lot above it is flagged.
     """
-    a_vencer = max(_f(row, "cred_a_vencer") - _f(row, "cred_a_vencer_com_parcela_inad"), 0.0)
+    # Tabela I — the identity that ties.
+    a_vencer_gross = _f(row, "cred_a_vencer")
+    a_vencer_impaired = _f(row, "cred_a_vencer_com_parcela_inad")
+    inadimplentes = _f(row, "cred_inadimplentes")
+    in_recovery = _f(row, "cred_empresa_recuperacao")
+    # I.2.a.1/b.1 is already "a vencer E ADIMPLENTES"; the impaired block
+    # I.2.a.2/b.2 is a separate item, not a subset.  Do not subtract it.
+    a_vencer = a_vencer_gross
+
+    # Tabelas V and VI — the age ladder.  A different source from Tabela I, so it
+    # does not tie exactly; the gap is flagged below rather than reconciled away.
     inad_total = _f(row, "inad_total")
     inad_90 = _f(row, "inad_90_mais")
     inad_180 = _f(row, "inad_180_mais")
 
     buckets = {
         "A": a_vencer,
+        "A2": a_vencer_impaired,  # not yet due, but already missing an instalment
         "B": max(inad_total - inad_90, 0.0),
         "C": max(inad_90 - inad_180, 0.0),
         "D": inad_180,
-        "E": _f(row, "cred_empresa_recuperacao"),
+        "E": in_recovery,  # overlay, not a partition — also counted in B/C/D
     }
 
-    com = _f(row, "dircred_com_risco")
-    sem = _f(row, "dircred_sem_risco")
-    share = com / (com + sem) if (com + sem) > 0 else None
+    # Do not swap these.  com_risco = the fund took the risk = true sale.
+    # sem_risco = risk stayed with the cedente = the paper that carries recourse.
+    true_sale = _f(row, "dircred_com_risco")
+    recourse = _f(row, "dircred_sem_risco")
+    share = recourse / (recourse + true_sale) if (recourse + true_sale) > 0 else None
 
     flags: list[str] = []
     if share is None:
@@ -190,21 +225,32 @@ def carve_fund(row: pd.Series, *, single_signature_ceiling: float = 10_000_000.0
         flags.append("lots above one signature: " + ", ".join(sorted(big)))
 
     n_rj = int(_f(row, "n_rj"))
-    if n_rj and buckets["E"] == 0:
+    if n_rj and in_recovery == 0:
         flags.append(
             f"{n_rj} cedente(s) in recuperacao judicial but no credit reported against "
             "companies in recovery — the claim may sit unmarked"
         )
 
     cot = row.get("cotistas")
+    gap = inad_total - inadimplentes
+    if inadimplentes > 0 and abs(gap) / inadimplentes > 0.02:
+        flags.append(
+            f"age ladder and Tabela I disagree on the overdue block by R${gap / 1e6:,.1f}m "
+            f"({gap / inadimplentes:+.0%}) — Tabela I is the one that ties"
+        )
+
     return Carve(
         cnpj=str(row.get("CNPJ_FUNDO_CLASSE", "")),
         name=str(row.get("DENOM_SOCIAL", "")),
         carteira=_f(row, "carteira"),
         provision=_f(row, "pdd"),
+        a_vencer=a_vencer,
+        a_vencer_impaired=a_vencer_impaired,
+        inadimplentes=inadimplentes,
+        in_recovery=in_recovery,
         buckets=buckets,
-        recourse_face=com,
-        non_recourse_face=sem,
+        recourse_face=recourse,
+        true_sale_face=true_sale,
         recourse_share=share,
         cedentes_named=int(_f(row, "n_ced")),
         cedentes_in_rj=n_rj,

@@ -18,6 +18,7 @@ def _row(**kw):
         "pdd": 30.0,
         "cred_a_vencer": 80.0,
         "cred_a_vencer_com_parcela_inad": 5.0,
+        "cred_inadimplentes": 30.0,
         "inad_total": 40.0,
         "inad_90_mais": 25.0,
         "inad_180_mais": 15.0,
@@ -38,18 +39,44 @@ def test_lot_vocabulary_is_stable():
 
 def test_buckets_partition_the_ageing():
     c = carve_fund(_row())
-    assert c.buckets["A"] == 75.0  # a vencer net of the overdue-instalment block
+    assert c.buckets["A"] == 80.0  # I.2.a.1/b.1 is already "a vencer e adimplentes"
+    assert c.buckets["A2"] == 5.0  # the impaired block is a separate item, not a subset
     assert c.buckets["B"] == 15.0  # inad_total - inad_90_mais
     assert c.buckets["C"] == 10.0  # inad_90_mais - inad_180_mais
     assert c.buckets["D"] == 15.0
     assert c.buckets["B"] + c.buckets["C"] + c.buckets["D"] == 40.0
 
 
-def test_recourse_share_comes_from_the_informe():
+def test_recourse_semantics_are_not_inverted():
+    """The CVM split is *aquisicao substancial dos riscos*, not recourse.
+
+    com_risco means the FUND took the loss, so that paper is a true sale with no
+    recourse.  sem_risco means the risk stayed with the cedente, which is where
+    the recourse lives.  This module had it backwards on 12 September 2026 and
+    the error reversed the buyer for three quarters of the book.  Do not "fix"
+    this test by swapping it back.
+    """
+    c = carve_fund(_row(dircred_com_risco=20.0, dircred_sem_risco=60.0))
+    assert c.true_sale_face == 20.0, "com_risco is the TRUE SALE block"
+    assert c.recourse_face == 60.0, "sem_risco is the block that CARRIES recourse"
+    assert c.recourse_share == 0.75
+
+
+def test_gross_face_ties_to_tabela_i_and_does_not_double_count_recovery():
+    """Bucket E is a status overlay, also counted in B/C/D. Summing buckets
+    double-counts it, so gross face comes from Tabela I instead."""
+    c = carve_fund(_row(cred_empresa_recuperacao=7.0))
+    assert c.gross_face == 80.0 + 5.0 + 30.0  # a vencer + impaired + inadimplentes
+    assert c.buckets["E"] == 7.0
+    assert c.gross_face != sum(c.buckets.values())
+
+
+def test_age_ladder_disagreeing_with_tabela_i_is_flagged():
+    # inad_total 40 from the age ladder vs cred_inadimplentes 30 from Tabela I
     c = carve_fund(_row())
-    assert c.recourse_share == 0.25
-    assert c.recourse_face == 20.0
-    assert c.non_recourse_face == 60.0
+    assert any("age ladder and Tabela I disagree" in f for f in c.flags)
+    tied = carve_fund(_row(inad_total=30.0, inad_90_mais=20.0, inad_180_mais=10.0))
+    assert not any("disagree" in f for f in tied.flags)
 
 
 def test_missing_recourse_split_is_flagged_not_guessed():
@@ -84,7 +111,7 @@ def test_carve_universe_is_one_row_per_fund():
     df = pd.DataFrame([_row(), _row(DENOM_SOCIAL="OUTRO FIDC")])
     out = carve_universe(df)
     assert len(out) == 2
-    assert out["lot_A"].tolist() == [75.0, 75.0]
+    assert out["lot_A"].tolist() == [80.0, 80.0]
     assert out["gross_face"].tolist() == [115.0, 115.0]
 
 
