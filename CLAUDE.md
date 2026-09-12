@@ -8,6 +8,7 @@ VAZANTE is a principal desk that buys whole broken Brazilian FIDC carteiras for 
 - `docs/01_business_case_final_2026-09-10.md` — the business case, final. It supersedes every earlier draft. Part 9 holds the decision and the five dated gates.
 - `docs/02_pacote_de_compradores_2026-09-10.md` — the buyer package. Buyer-facing pages are in Portuguese and marked.
 - `docs/03_forensic_oracle_layer.md` — the Oracle specification.
+- `docs/04_the_lot_sale_2026-09-12.md` — **the business model.** It supersedes Part 3 of the business case: VAZANTE is paid by the seller to cut a broken carteira into lots and sell each lot to the buyer who wants that risk. The screen, the data and the target list are unchanged.
 - `docs/OPEN_NOTES.md`, `docs/BACKLOG.md`, `docs/GATES.md`, `docs/SOURCES.md`.
 
 The Google Docs in the Drive folder are canonical. The markdown copies under `docs/` are working snapshots; when they disagree with the Google Doc, the Google Doc wins and the snapshot gets refreshed.
@@ -16,7 +17,9 @@ The Google Docs in the Drive folder are canonical. The markdown copies under `do
 
 1. **Drafts only.** Never send an email or a message, never contact a buyer, seller, administrador, counsel or bank from a session. External text is a staged draft; a partner sends it.
 2. **No price to a seller** — not indicative, not firm — comes out of code or a session. The Day-1 range and the Day-8 firm bid are produced by the method in the business case and signed by a partner. Nothing counts as locked proceeds unless it is a signed take-out with arras; a grid is a price list.
-3. **Words.** Never *laudo*, *parecer* or *auditoria* in anything a seller could see. Never a fee, a mandate or a report. VAZANTE buys and sells; it renders no service.
+3. **Words.** Never *laudo*, *parecer*, *auditoria* or *avaliação* in anything a seller or a buyer could see, and never an opinion of value. That rule is a regulatory perimeter, not a style: it is what keeps the desk outside the licensed professions. Never *mandato* either — the contract is a **corretagem** under CC arts. 722–729, which introduces without binding; a *mandato* binds.
+
+   *Superseded 12 September 2026 by MGC.* The old rule read "never a fee, a mandate or a report; VAZANTE buys and sells, it renders no service." The desk now runs the lot sale (`docs/04_the_lot_sale_2026-09-12.md`): it is paid a fee by the seller to cut a broken carteira into lots and sell each lot to its natural buyer. It renders a service and charges for it. It still never buys, never holds the proceeds, and never opines on value.
 4. **No fund-level fraud score, ever.** The Oracle produces evidence states per dimension (E/T/C/D/R) and buyer-specific value consequences. It identifies facts, contradictions and missing evidence; it does not declare that anyone committed fraud. Legal consequences are LEGAL_REVIEW.
 5. **Numbers are computed, not typed.** Every load-bearing figure carries one of five tags — VERIFIED, MODEL, ASSUMPTION, GATED, DECISION — and a guess is labelled "(inferido)". Thresholds live in `config/thresholds.yaml`, never in code.
 6. **Evidence.** Every external fact enters through `vazante.oracle.evidence.pull()` with a pull_id and a SHA-256 of the raw response. A technical failure is never read as "no record".
@@ -40,6 +43,7 @@ config/          thresholds.yaml (every parameter, tagged) · sources.yaml (data
 vazante/cvm      bulk layer (download — works), table schema (mapping NOT frozen), breakflag, screen, fnet (stubs)
 vazante/oracle   states (vocabulary), evidence (pull wrapper — works), bridge (forensic bridge — works), sweep (validators work; tape sweep stub)
 vazante/buyers   box schema + loader, example V0 box, bid log
+vazante/lots     the carve: cut a carteira along recourse, age, cedente status and size
 vazante/economics one-trade arithmetic reproducing Part 7.1; campaign model to be rebuilt
 tests/           regression anchors — keep them green
 ```
