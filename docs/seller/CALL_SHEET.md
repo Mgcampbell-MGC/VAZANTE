@@ -43,55 +43,6 @@ assembleia, no fee at fund level, no CVM filing.
 **The ask is the tape.** Not a meeting, not a mandate, not a price. One file,
 position by position.
 
-## What I think
-
-**Call order is not size order.** Three things decide how fast a house can say yes: whether one
-person signs both the gestora and the administrador, whether the book still has a performing block
-to argue about, and whether its lots produce a cheque any buyer will open a file for.
-
-**Start with Libertas / Actual — row 5.** It is the only house in the dataset where the gestora and
-the administrador are the same people: Guilherme Mourão Vaz and Marcelo Faria Rodrigues sit in both,
-salas 1001 and 1003 of the same building in Belo Horizonte, one switchboard. Everywhere else a deal
-needs a gestor and an administrador to agree, which is the thing that costs three weeks. And two of
-their four books — Prosper and Milagre — have **nothing left in the not-yet-due bucket**. There is
-no performing block to defend, no mark to protect, one quota-holder each. It is the smallest cheque
-on the list and by some distance the fastest signature.
-
-**Then Ouro Preto — row 2.** Four funds, R$ 71m of distressed paper, which is the largest pooled
-distressed lot on the list that is not Solis. Albatroz is provisioned at 99% and two of their
-cedentes are already in recuperação judicial. This is the biggest real deal available.
-
-**Solis is the biggest book and the slowest room.** Pátria completed its acquisition of 51% of Solis
-on 2 January 2026. A listed sponsor now consolidates a R$721m factoring book — legacy books get
-cleaned in year one of a control change, and that clock started nine months ago, which is an
-argument for calling. But procurement at a house owned by a NASDAQ-listed manager is not a
-four-week process. Call it early, expect it late.
-
-**Leave Recovery, Enforce and JiveMauá out of the first round entirely.** All three are in the
-registry and all three drop out of every row above on the cheque test. Recovery states a R$100m
-portfolio minimum and nothing here reaches it.
-
-## Where this map is genuinely thin, and you should know before you call
-
-**Three houses hold true-sale books and we have almost no named buyer for them.** Augme (R$ 89.5m),
-Fram (R$ 37.3m) and Utility (R$ 13.4m) report no recourse to the cedente at all, which means a buyer
-has to underwrite the *debtor*. Almost every firm the research surfaced underwrites *originators* —
-they are fomento-origin houses reading a cedente's balance sheet. Paramis is the only name that
-crosses over. **That is a gap in our research, not proof the market is empty**, but do not walk into
-those three implying we have a bid.
-
-**Two distressed blocks are too small for anybody.** Augme's R$ 17.4m and Utility's R$ 8.9m produce
-a cheque under R$ 1.5m at any plausible band. Bundle them across houses or leave them.
-
-**The performing block is the prize and it is the least proven.** R$ 1,348m of face, and the
-provision covers 103% of everything already impaired, so the paper is not being written down by
-association. But the only bid anyone has *demonstrated* for it is the cedente's own repurchase —
-R$ 1,033m a year. Everything else on the performing line above is appetite, not a transaction.
-
-**The single-quota-holder claim is weaker than it looks.** The senior cotista field is null for all
-twenty-five funds. Where a row says one holder, that is the subordinada count, and it is empty for
-ten of them. Do not build a one-person-assembleia argument on it without reading the regulamento.
-
 ---
 
 ## 1. SOLIS INVESTIMENTOS S A
@@ -117,7 +68,8 @@ Recourse to the cedente: **88%** of the credit book.
 >
 > Eu li os informes mensais do DANIELE MÚLTIPLO FIDC. Em julho, a carteira soma
 > R$ 721 milhões com PDD de 32%.
-> Da face bruta, R$ 629 milhões ainda **não venceram**
+> Da face bruta, R$ 629 milhões ainda
+> **não venceram**
 > e R$ 173 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -160,9 +112,10 @@ Recourse to the cedente: **89%** of the credit book.
 >
 > Não estou ligando para comprar nada, e não vou falar de preço.
 >
-> Eu li os informes mensais de os 4 fundos que vocês gerem. Em julho, a carteira soma
+> Eu li os informes mensais dos 4 fundos que vocês gerem. Em julho, a carteira soma
 > R$ 260 milhões com PDD de 49%.
-> Da face bruta do PONTUAL BRASIL FIDC, R$ 166 milhões ainda **não venceram**
+> Da face bruta do PONTUAL BRASIL FIDC, o maior deles, R$ 166 milhões ainda
+> **não venceram**
 > e R$ 30 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -205,9 +158,10 @@ Recourse to the cedente: **59%** of the credit book.
 >
 > Não estou ligando para comprar nada, e não vou falar de preço.
 >
-> Eu li os informes mensais de os 4 fundos que vocês gerem. Em julho, a carteira soma
+> Eu li os informes mensais dos 4 fundos que vocês gerem. Em julho, a carteira soma
 > R$ 166 milhões com PDD de 49%.
-> Da face bruta do FS FIDC, R$ 78 milhões ainda **não venceram**
+> Da face bruta do FS FIDC, o maior deles, R$ 78 milhões ainda
+> **não venceram**
 > e R$ 1 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -249,7 +203,8 @@ Recourse to the cedente: **100%** of the credit book.
 >
 > Eu li os informes mensais do FIDC ALUMIE. Em julho, a carteira soma
 > R$ 57 milhões com PDD de 189%.
-> Da face bruta, R$ 92 milhões ainda **não venceram**
+> Da face bruta, R$ 92 milhões ainda
+> **não venceram**
 > e R$ 26 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -292,9 +247,10 @@ Recourse to the cedente: **66%** of the credit book.
 >
 > Não estou ligando para comprar nada, e não vou falar de preço.
 >
-> Eu li os informes mensais de os 4 fundos que vocês gerem. Em julho, a carteira soma
+> Eu li os informes mensais dos 4 fundos que vocês gerem. Em julho, a carteira soma
 > R$ 71 milhões com PDD de 80%.
-> Da face bruta do PROSPER FIDC, R$ 17 milhões ainda **não venceram**
+> Da face bruta do PROSPER FIDC, o maior deles, R$ 17 milhões ainda
+> **não venceram**
 > e R$ 8 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -336,7 +292,8 @@ Recourse to the cedente: **0%** of the credit book.
 >
 > Eu li os informes mensais do K-FIDC CRÉDITO PESSOAL. Em julho, a carteira soma
 > R$ 85 milhões com PDD de 46%.
-> Da face bruta, R$ 70 milhões ainda **não venceram**
+> Da face bruta, R$ 70 milhões ainda
+> **não venceram**
 > e R$ 8 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -377,9 +334,10 @@ Recourse to the cedente: **59%** of the credit book.
 >
 > Não estou ligando para comprar nada, e não vou falar de preço.
 >
-> Eu li os informes mensais de os 2 fundos que vocês gerem. Em julho, a carteira soma
+> Eu li os informes mensais dos 2 fundos que vocês gerem. Em julho, a carteira soma
 > R$ 75 milhões com PDD de 47%.
-> Da face bruta do DANIELE II - FIDC, R$ 25 milhões ainda **não venceram**
+> Da face bruta do DANIELE II - FIDC, o maior deles, R$ 25 milhões ainda
+> **não venceram**
 > e R$ 20 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -421,7 +379,8 @@ Recourse to the cedente: **não reportado** of the credit book.
 >
 > Eu li os informes mensais do MÓDENA FIDC. Em julho, a carteira soma
 > R$ 36 milhões com PDD de 115%.
-> Da face bruta, R$ 0 milhões ainda **não venceram**
+> Da face bruta, R$ 0 milhões ainda
+> **não venceram**
 > e R$ 19 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -462,7 +421,8 @@ Recourse to the cedente: **0%** of the credit book.
 >
 > Eu li os informes mensais do FRAM CAPITAL NANSEN II FIDC - NÃO PADRONIZADO. Em julho, a carteira soma
 > R$ 23 milhões com PDD de 88%.
-> Da face bruta, R$ 12 milhões ainda **não venceram**
+> Da face bruta, R$ 12 milhões ainda
+> **não venceram**
 > e R$ 0 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -504,7 +464,8 @@ Recourse to the cedente: **28%** of the credit book.
 >
 > Eu li os informes mensais do SX CORPORATE FIDC. Em julho, a carteira soma
 > R$ 17 milhões com PDD de 37%.
-> Da face bruta, R$ 16 milhões ainda **não venceram**
+> Da face bruta, R$ 16 milhões ainda
+> **não venceram**
 > e R$ 1 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -546,7 +507,8 @@ Recourse to the cedente: **0%** of the credit book.
 >
 > Eu li os informes mensais do FACTIA FIDC. Em julho, a carteira soma
 > R$ 15 milhões com PDD de 58%.
-> Da face bruta, R$ 13 milhões ainda **não venceram**
+> Da face bruta, R$ 13 milhões ainda
+> **não venceram**
 > e R$ 9 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -588,7 +550,8 @@ Recourse to the cedente: **48%** of the credit book.
 >
 > Eu li os informes mensais do D'ORO CAPITAL FIDC CRÉDITO CORPORATIVO. Em julho, a carteira soma
 > R$ 14 milhões com PDD de 44%.
-> Da face bruta, R$ 12 milhões ainda **não venceram**
+> Da face bruta, R$ 12 milhões ainda
+> **não venceram**
 > e R$ 4 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -630,7 +593,8 @@ Recourse to the cedente: **86%** of the credit book.
 >
 > Eu li os informes mensais do AGA FIDC. Em julho, a carteira soma
 > R$ 18 milhões com PDD de 35%.
-> Da face bruta, R$ 13 milhões ainda **não venceram**
+> Da face bruta, R$ 13 milhões ainda
+> **não venceram**
 > e R$ 3 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -672,7 +636,8 @@ Recourse to the cedente: **100%** of the credit book.
 >
 > Eu li os informes mensais do TTMR FUNDO DE INVESTIMENTO EM DIREITOS CREDITÓRIOSADA. Em julho, a carteira soma
 > R$ 10 milhões com PDD de 70%.
-> Da face bruta, R$ 7 milhões ainda **não venceram**
+> Da face bruta, R$ 7 milhões ainda
+> **não venceram**
 > e R$ 3 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
@@ -714,7 +679,8 @@ Recourse to the cedente: **34%** of the credit book.
 >
 > Eu li os informes mensais do MUNDI FIDC. Em julho, a carteira soma
 > R$ 15 milhões com PDD de 50%.
-> Da face bruta, R$ 1 milhões ainda **não venceram**
+> Da face bruta, R$ 1 milhões ainda
+> **não venceram**
 > e R$ 7 milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >

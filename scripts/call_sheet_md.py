@@ -38,14 +38,15 @@ def opening(house: str, funds: pd.DataFrame, row: pd.Series) -> str:
     nm = short(lead["name"])
     a, d = lead.lot_A / M, lead.lot_D / M
     many = len(funds) > 1
-    scope = f"os {len(funds)} fundos que vocês gerem" if many else nm
+    scope = f"dos {len(funds)} fundos que vocês gerem" if many else f"do {nm}"
     return f"""> Bom dia, {{nome}}. Aqui é o Gui Cunha, da Sutphin.
 >
 > Não estou ligando para comprar nada, e não vou falar de preço.
 >
-> Eu li os informes mensais {"de " if many else "do "}{scope}. Em julho, a carteira soma
+> Eu li os informes mensais {scope}. Em julho, a carteira soma
 > R$ {row.carteira_Rm:,.0f} milhões com PDD de {row.provision_pct:.0f}%.
-> Da face bruta{" do " + nm if many else ""}, R$ {a:,.0f} milhões ainda **não venceram**
+> Da face bruta{" do " + nm + ", o maior deles" if many else ""}, R$ {a:,.0f} milhões ainda
+> **não venceram**
 > e R$ {d:,.0f} milhões estão vencidos **há mais de 180 dias**. São dois ativos
 > diferentes, e quem compra um não é quem compra o outro.
 >
