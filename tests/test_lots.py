@@ -119,3 +119,65 @@ def test_carve_never_produces_a_price():
     c = carve_fund(_row())
     row = c.as_row()
     assert not any("price" in k or "value" in k or "bid" in k for k in row)
+
+
+# ---- routing ----------------------------------------------------------------
+
+from vazante.lots import BANDS, Buyer, load_registry, route
+
+
+def _buyer(name="X", lots=("D",), risk="either", floor=0.0, speed=10):
+    return Buyer(
+        name=name, lots=tuple(lots), risk=risk, ticket_floor_brl=floor,
+        speed_days=speed, signs="alguem", tag="ASSUMPTION",
+    )
+
+
+def test_registry_loads_and_every_lot_has_a_buyer():
+    reg = load_registry()
+    assert len(reg) >= 10
+    covered = {lot for b in reg for lot in b.lots}
+    assert covered >= set(BANDS), f"no buyer for {set(BANDS) - covered}"
+
+
+def test_registry_carries_no_price():
+    """A price never lives in the registry — that is what a calibrated box is for."""
+    import pathlib
+
+    import yaml
+    raw = yaml.safe_load(pathlib.Path("config/buyer_registry.yaml").read_text(encoding="utf-8"))
+    for b in raw["buyers"]:
+        assert not any("price" in k or "centavo" in k for k in b), b["name"]
+
+
+def test_the_floor_is_a_cheque_not_a_face():
+    """R$10m of deep paper is a small cheque; R$10m of performing paper is not."""
+    reg = [_buyer(lots=("A", "D"), floor=2_000_000)]
+    deep = route({"D": 10_000_000}, recourse_share=None, registry=reg)
+    assert deep == [], "R$10m at 3-8 centavos is below a R$2m floor"
+    perf = route({"A": 10_000_000}, recourse_share=None, registry=reg)
+    assert len(perf) == 1, "R$10m at 55-75 centavos clears it"
+
+
+def test_a_cedente_underwriter_is_not_offered_a_true_sale_book():
+    reg = [_buyer(risk="cedente", lots=("A",)), _buyer(name="Y", risk="sacado", lots=("A",))]
+    true_sale = route({"A": 50_000_000}, recourse_share=0.05, registry=reg)
+    assert [m.buyer.name for m in true_sale] == ["Y"]
+    recourse = route({"A": 50_000_000}, recourse_share=0.95, registry=reg)
+    assert [m.buyer.name for m in recourse] == ["X"]
+
+
+def test_unknown_recourse_mix_offers_the_lot_to_everyone():
+    reg = [_buyer(risk="cedente", lots=("A",)), _buyer(name="Y", risk="sacado", lots=("A",))]
+    assert len(route({"A": 50_000_000}, recourse_share=None, registry=reg)) == 2
+
+
+def test_matches_come_back_fastest_first():
+    reg = [_buyer(name="slow", speed=60), _buyer(name="fast", speed=5)]
+    assert [m.buyer.name for m in route({"D": 500_000_000}, recourse_share=None, registry=reg)] == [
+        "fast", "slow",
+    ]
+
+
+def test_empty_lots_match_nobody():
+    assert route({"D": 0.0}, recourse_share=0.5) == []

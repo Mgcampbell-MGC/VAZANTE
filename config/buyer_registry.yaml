@@ -1,0 +1,212 @@
+# Named buyers, by the lot each one actually takes.
+#
+# This is NOT a buy box. A box (vazante/buyers/box.py) carries pricing and comes out of a calibration
+# session with the buyer. This file carries only what desk research established: what a firm buys, the
+# smallest cheque it will write, who signs, and how fast it can reach a firm bid. No price lives here.
+#
+# `lots` uses the carve vocabulary in vazante/lots/carve.py:
+#   A   not yet due and current          A2  not yet due, already missing an instalment
+#   B   overdue under 90 days            C   overdue 90-180      D   overdue 180+
+#   E   claims on cedentes in recuperacao judicial
+# `risk` says what the firm underwrites — `cedente` (recourse paper) or `sacado` (true sale) or `either`.
+# `ticket_floor_brl` is the smallest PRICE, not face. Below it nobody opens a file.
+# `speed_days` is research's estimate of first look to firm bid.
+# `tag` is VERIFIED (sourced), MODEL (computed) or ASSUMPTION (reasoned).
+#
+# Compiled 2026-09-13 from the lot-by-lot buyer research. Nobody on this list has been contacted.
+
+frozen: "2026-09-13"
+
+buyers:
+
+  # ---- the channel that is already moving R$1,033m a year ----------------------
+  - name: "O próprio cedente (recompra)"
+    lots: [A, A2, B, C]
+    risk: cedente
+    ticket_floor_brl: 0
+    speed_days: 5
+    signs: "o diretor do proprio cedente"
+    tag: VERIFIED
+    note: >
+      Not a negotiated secondary trade — the coobrigacao clause being honoured. R$1,033m across 19 of the
+      25 funds in the twelve months to July 2026, against R$0 to third parties. No credit approval, no
+      eligibility test, no committee: the obligation already exists in a signed contract.
+
+  # ---- recourse paper: the buyer underwrites the originator --------------------
+  - name: "Grupo Sifra"
+    lots: [A, A2, B]
+    risk: cedente
+    ticket_floor_brl: 1_000_000
+    ticket_ceiling_brl: 10_000_000
+    speed_days: 10
+    signs: "Paulo Schonenberg ou Roberto Pestana (fundadores)"
+    tag: VERIFIED
+    note: >
+      Duplicatas and notas promissorias from industry, wholesale and services; ANBIMA classifies the FIDCs
+      as Fomento Mercantil, the closest formal match to this paper. 700+ active clients against a R$2.2bn
+      portfolio implies a line near R$3m. Founder-run, which is why it is the fastest real yes on the list.
+
+  - name: "Multiplike"
+    lots: [A, A2, B]
+    risk: cedente
+    ticket_floor_brl: 1_000_000
+    ticket_ceiling_brl: 20_000_000
+    speed_days: 21
+    signs: "comite de credito"
+    tag: VERIFIED
+    note: "R$3.1bn (CVM May 2025), reported R$3.7-4.5bn later. Largest exclusively-multicedente manager."
+
+  - name: "RED Asset / Grupo RED"
+    lots: [A, A2, B]
+    risk: cedente
+    ticket_floor_brl: 5_000_000
+    ticket_ceiling_brl: 100_000_000
+    speed_days: 42
+    signs: "Filipe de Albuquerque Fleury Guimaraes, diretor responsavel, sobre decisao de comite"
+    tag: VERIFIED
+    note: >
+      Largest multicedente/multissacado FIDC manager in Brazil, R$5.4bn (CVM May 2025). Grew out of a
+      20-year fomento house, so the credit team underwrites cedentes. IFC put R$160m into a RED FIDC in
+      2020. Slower than a fomento house because there is an institutional investor base to answer to.
+
+  - name: "SRM Empírica"
+    lots: [A, A2, B]
+    risk: cedente
+    ticket_floor_brl: 5_000_000
+    ticket_ceiling_brl: 50_000_000
+    speed_days: 35
+    signs: "comite de credito e o diretor responsavel da classe receptora"
+    tag: VERIFIED
+    note: >
+      R$8.8bn, 60+ FIDCs across 17 sectors; structured Brazil's first multicedente-multissacado FIDC in
+      2005. Caveat that must be stated: no evidence found of SRM Empírica ever buying a SEASONED SECONDARY
+      block out of another fund. Their documented activity is origination. Already in Sutphin's book.
+
+  - name: "Athenabanco (Grupo Athena)"
+    lots: [A, A2, B]
+    risk: cedente
+    ticket_floor_brl: 1_000_000
+    speed_days: 14
+    signs: "fundador"
+    tag: ASSUMPTION
+    note: "Named by the research as a fast cedente-risk buyer; ticket and speed not independently sourced."
+
+  - name: "Banco Daycoval"
+    lots: [A, A2]
+    risk: cedente
+    ticket_floor_brl: 10_000_000
+    speed_days: 63
+    signs: "mesa de credito do banco"
+    tag: ASSUMPTION
+    note: "Bank balance sheet, so the cheapest money and the slowest process. Worth one call, not a plan."
+
+  # ---- deep distressed: the competitive, liquid bid ----------------------------
+  - name: "Smart Compass"
+    lots: [C, D]
+    risk: either
+    ticket_floor_brl: 2_000_000
+    ticket_ceiling_brl: 10_000_000
+    speed_days: 17
+    signs: "Daniel Ramos"
+    tag: VERIFIED
+    note: >
+      The hardest published ticket number in the market: R$2m-R$10m per transaction across roughly 85
+      planned acquisitions (NeoFeed, 7 Apr 2025). R$100m of equity against R$1.5bn of face implies 6.67
+      centavos. This is the firm that sets the floor for what counts as a sellable lot.
+
+  - name: "Grupo IOX"
+    lots: [C, D]
+    risk: either
+    ticket_floor_brl: 2_000_000
+    ticket_ceiling_brl: 30_000_000
+    speed_days: 21
+    signs: "Richard Ionescu (CEO)"
+    tag: VERIFIED
+    note: >
+      R$4bn AUM, R$350m NPL FIDC, NPL segment grew 366% over twelve months. Publicly on the record that
+      supply is up "50% ou mais" and "nao tem 20 players bons nesse mercado". Founder-led, no committee.
+
+  - name: "Rooftop"
+    lots: [C, D]
+    risk: either
+    ticket_floor_brl: 2_000_000
+    speed_days: 21
+    signs: "Daniel Gava"
+    tag: VERIFIED
+
+  - name: "Möbius Capital"
+    lots: [C, D]
+    risk: either
+    ticket_floor_brl: 3_000_000
+    speed_days: 28
+    signs: "Renato Herkenhoff (co-fundador)"
+    tag: VERIFIED
+    note: >
+      ~R$800m across 11 vehicles; third fund had its first closing end-July 2026, so there is fresh
+      undeployed capital and an IRR clock running. On the record: opportunities that used to knock once a
+      month now knock almost daily — which is the argument for showing him something nobody else has.
+
+  - name: "Paramis Capital"
+    lots: [C, D, A]
+    risk: either
+    ticket_floor_brl: 3_000_000
+    speed_days: 28
+    signs: "Danilo Ribeiro (CEO)"
+    tag: VERIFIED
+    note: >
+      R$2bn AUM with an investment-banking arm originating R$6bn. Told Capital Aberto in Oct 2025 they
+      were negotiating to buy a house focused on FIDC multicedente multissacado — so they want this exact
+      capability, and an IB pays finders as routine.
+
+  - name: "ASA (Alberto Safra)"
+    lots: [C, D]
+    risk: either
+    ticket_floor_brl: 5_000_000
+    speed_days: 21
+    signs: "mesa de special situations"
+    tag: ASSUMPTION
+
+  - name: "Enforce (BTG Pactual)"
+    lots: [D]
+    risk: either
+    ticket_floor_brl: 20_000_000
+    speed_days: 63
+    signs: "comite institucional"
+    tag: VERIFIED
+    note: "Standing box only. Institutional procurement; do not build a four-week plan on it."
+
+  - name: "JiveMauá"
+    lots: [D]
+    risk: either
+    ticket_floor_brl: 20_000_000
+    ticket_ceiling_brl: 200_000_000
+    speed_days: 56
+    signs: "Bruno Gomes (socio), sobre comite"
+    tag: VERIFIED
+    note: >
+      R$25.5bn AUM; R$1.8bn deployed across 20-25 transactions in 15 months, so the implied average cheque
+      is R$72m-R$90m. The biggest prize and the slowest process. Bundled lots only.
+
+  - name: "Recovery do Brasil (Itaú)"
+    lots: [D]
+    risk: either
+    ticket_floor_brl: 100_000_000
+    speed_days: 84
+    signs: "comite institucional"
+    tag: VERIFIED
+    note: >
+      States a R$100m portfolio minimum and is roughly 95% consumer. Nothing in this population reaches
+      it. Price discovery only — deprioritise.
+
+  # ---- claims on failed originators -------------------------------------------
+  - name: "Compradores de créditos em recuperação judicial"
+    lots: [E]
+    risk: cedente
+    ticket_floor_brl: 1_000_000
+    speed_days: 45
+    signs: "varia"
+    tag: ASSUMPTION
+    note: >
+      Jive is the known name; the market is real but thin at this size. Average exposure per cedente in
+      recuperacao across this population is about R$4m, which is at or below most claims buyers' floor.
+      The most interesting bidder is usually the debtor's own group.
