@@ -29,42 +29,53 @@ WARN = PatternFill("solid", fgColor="FCE4E4")
 BOLD = Font(bold=True)
 WRAP = Alignment(wrap_text=True, vertical="top")
 
-#: Day, track, owner, task. The whole deal, in order.
-STEPS: list[tuple[str, str, str, str]] = [
-    ("0", "A", "GC", ("He agreed to send the tape. Nothing before this counts as a yes — "
-                     "do not start the clock on 'manda a página'.")),
-    ("0–1", "A", "GC", ("NDA signed both directions. BEFORE the tape, never after — once a tape "
-                       "lands we hold personal data and LGPD applies to us.")),
-    ("1", "B", "GC", ("Teaser out to the named buyers for this book's lots. No name, no CNPJ, "
-                     "shape only. Do not wait for the tape.")),
-    ("1–3", "A", "MGC", ("Short-form corretagem sent. With the GESTORA as a company, never the "
-                        "fund. Mobilisation fee creditable — say so in the first sentence.")),
-    ("1–3", "A", "GC", "Tape spec sent WITH the contract, not after. One page of fields."),
-    ("1–5", "B", "GC", "NDAs back from buyers. Nobody gets exclusivity, not for a day."),
-    ("3", "A", "MGC", "Contract signed. Mobilisation invoice raised."),
-    ("3–5", "A", "GC", ("Tape received. Check it opens and has the Tier 1 fields before "
-                       "thanking him for it.")),
-    ("5", "A", "MGC", "MOBILISATION FEE PAID — first money."),
-    ("3–8", "A", "MGC", ("Reconcile the tape against his own CVM informe. If it does not tie, "
-                        "that is finding one and it goes back the same day.")),
-    ("3–8", "A", "MGC", ("Offline sweep: CNPJ check digits, NF-e chaves, duplicates, sacado that "
-                        "is its own cedente, zero-face rows.")),
-    ("6–8", "A", "MGC", "Cut the lots. Recourse, age, cedente status, size."),
-    ("8–12", "A", "both", "Sale book per lot. Descriptive only — no opinion of value, anywhere."),
-    ("8–12", "A", "GC", ("Get the reserve IN WRITING before the round opens. The upside share "
-                        "depends on it and it cannot be agreed afterwards.")),
-    ("12", "B", "GC", "Data room opens to whoever signed."),
-    ("12–22", "B", "GC", ("The round. One standard proposal form for everybody — lot, price, "
-                         "conditions, expiry, arras, signatory.")),
-    ("22", "B", "GC", "Round closes. On the day stated in writing on day one."),
-    ("23", "C", "both", ("Quadro comparativo delivered. Every indication side by side, "
-                        "normalised. This is what he is paying for.")),
-    ("23", "C", "MGC", "ROUND FEE INVOICED — second money."),
-    ("23–25", "C", "GC", "He picks."),
-    ("25–40", "C", "GC", ("His counsel drafts the instrumento particular de cessão. We draft "
-                         "nothing.")),
-    ("25–40", "C", "MGC", "Confirm the buyer pays the FUND directly. We never touch the money."),
-    ("40+", "C", "MGC", "SUCCESS FEE INVOICED on settlement — third money."),
+#: Day, track, owner, the action, and the note. The action is short so the column
+#: stays narrow; the note carries the reason, which is what stops it being done wrong.
+STEPS: list[tuple[str, str, str, str, str]] = [
+    ("0", "A", "GC", "He agrees to send the tape",
+     ("This is the only thing that counts as a yes. 'Manda a página' is not one. "
+     "Do not start the clock before it.")),
+    ("0–1", "A", "GC", "NDA signed, both directions",
+     ("BEFORE the tape, never after. Once a tape lands we hold personal data and LGPD "
+     "applies to us.")),
+    ("1", "B", "GC", "Teaser out to the buyers for these lots",
+     "No name, no CNPJ, shape only. Do NOT wait for the tape — this is where the weeks are."),
+    ("1–3", "A", "MGC", "Short-form corretagem sent",
+     ("With the GESTORA as a company, never the fund. Mobilisation fee creditable — say so in "
+     "the first sentence, not the last.")),
+    ("1–3", "A", "GC", "Tape spec sent WITH the contract",
+     "One page of fields. Sending it afterwards costs a week for nothing."),
+    ("1–5", "B", "GC", "NDAs back from buyers",
+     "Nobody gets exclusivity. Not for a day."),
+    ("3", "A", "MGC", "Contract signed · mobilisation invoice raised", ""),
+    ("3–5", "A", "GC", "Tape received",
+     "Check it opens and has the Tier 1 fields before thanking him for it."),
+    ("5", "A", "MGC", "MOBILISATION FEE PAID", "First money."),
+    ("3–8", "A", "MGC", "Reconcile the tape against his own CVM informe",
+     "If it does not tie, that is finding number one and it goes back to him the same day."),
+    ("3–8", "A", "MGC", "Offline sweep",
+     ("CNPJ check digits, NF-e chaves, duplicates, a sacado that is its own cedente, "
+     "zero-face rows.")),
+    ("6–8", "A", "MGC", "Cut the lots", "Recourse, age, cedente status, size."),
+    ("8–12", "A", "both", "Build the sale book, per lot",
+     "Descriptive only. No opinion of value, anywhere, ever."),
+    ("8–12", "A", "GC", "Get the reserve IN WRITING",
+     ("Before the round opens. The upside share depends on it and it cannot be agreed "
+     "after the bids are in.")),
+    ("12", "B", "GC", "Data room opens", "To whoever signed the NDA."),
+    ("12–22", "B", "GC", "Run the round",
+     ("One standard proposal form for everybody — lot, price, conditions, expiry, arras, "
+     "signatory. Otherwise you cannot compare them.")),
+    ("22", "B", "GC", "Round closes", "On the day stated in writing on day one."),
+    ("23", "C", "both", "Quadro comparativo delivered",
+     ("Every indication side by side, normalised, with what each buyer said would move his "
+     "number. This is what he is paying for.")),
+    ("23", "C", "MGC", "ROUND FEE INVOICED", "Second money. Decouples our cash from his closing."),
+    ("23–25", "C", "GC", "He picks", ""),
+    ("25–40", "C", "GC", "His counsel drafts the cessão", "We draft nothing."),
+    ("25–40", "C", "MGC", "Confirm the buyer pays the FUND directly",
+     "We never touch the money. We invoice separately."),
+    ("40+", "C", "MGC", "SUCCESS FEE INVOICED on settlement", "Third money."),
 ]
 
 KILLERS = [
@@ -168,26 +179,26 @@ def tab_days(wb: Workbook) -> None:
     ws.cell(row=1, column=2, value="[ house name ]")
     ws.cell(row=1, column=4, value="Day 0 date:").font = BOLD
     ws.cell(row=1, column=5, value="[ dd/mm ]")
-    head(ws, 3, [("Day", 8), ("Track", 8), ("Owner", 9), ("What has to happen", 86),
-                 ("Done", 8), ("Date done", 12), ("Notes", 42)])
+    head(ws, 3, [("Day", 8), ("Track", 8), ("Owner", 9), ("What has to happen", 42),
+                 ("Why / watch out", 58), ("Done", 8), ("Date done", 12), ("Notes", 30)])
     dv = DataValidation(type="list", formula1='"Yes,No,N/A"', allow_blank=True)
     ws.add_data_validation(dv)
     r = 4
-    for day, track, owner, what in STEPS:
+    for day, track, owner, what, note in STEPS:
         fill = {"A": BAND, "B": PatternFill("solid", fgColor="FBF3E6"),
                 "C": PatternFill("solid", fgColor="E9F3EE")}[track]
-        for j, v in enumerate([day, track, owner, what, "", "", ""], start=1):
+        for j, v in enumerate([day, track, owner, what, note, "", "", ""], start=1):
             c = ws.cell(row=r, column=j, value=v)
-            c.alignment = WRAP if j in (4, 7) else Alignment(
+            c.alignment = WRAP if j in (4, 5, 8) else Alignment(
                 vertical="top", horizontal="center")
             c.fill = fill
             if j == 4 and ("FEE" in what or "first money" in what or "second money" in what
                            or "third money" in what):
                 c.font = BOLD
-        dv.add(ws.cell(row=r, column=5))
-        ws.row_dimensions[r].height = max(28, 13 * (len(what) // 82 + 1))
+        dv.add(ws.cell(row=r, column=6))
+        ws.row_dimensions[r].height = max(28, 13 * (len(note) // 56 + 1))
         r += 1
-    ws.auto_filter.ref = f"A3:G{r - 1}"
+    ws.auto_filter.ref = f"A3:H{r - 1}"
 
 
 def tab_pipeline(wb: Workbook) -> None:

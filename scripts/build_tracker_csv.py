@@ -1,17 +1,19 @@
-"""Emit the tracker as one CSV, for upload to Drive as a Google Sheet.
+"""Emit the tracker as three CSVs — one clean grid each.
 
-Three sections stacked in one tab, separated by banner rows. The .docx-style
-multi-tab workbook exists too (scripts/build_tracker.py) but a Sheet built from
-text uploads reliably, and one tab someone actually scrolls beats four tabs that
-arrived corrupt.
+They were one sheet with three sections stacked, and it read badly: a single
+column had to hold both 150 characters of task text and a numeric face value,
+three different header rows shared one grid, and a CSV upload carries no column
+widths. Three focused sheets each have one header row and one set of column
+semantics, which is legible without any formatting at all.
 
-    .venv/bin/python -m scripts.build_tracker_csv > out/tracker.csv
+    .venv/bin/python -m scripts.build_tracker_csv out/t1.csv out/t2.csv out/t3.csv
 """
 
 from __future__ import annotations
 
 import csv
 import sys
+from pathlib import Path
 
 import pandas as pd
 import yaml
@@ -19,64 +21,62 @@ import yaml
 from scripts.build_call_workbook import PRIORITY, _ascii
 from scripts.build_tracker import KILLERS, RULES, STAGES, STEPS
 
+LOT_LABEL = {"A": "not yet due", "A2": "impaired", "B": "1-90d", "C": "90-180d",
+             "D": "180d+", "E": "RJ claims"}
 
-def main() -> None:
-    w = csv.writer(sys.stdout)
-    r = w.writerow
 
-    r(["VAZANTE — DEAL TRACKER"])
-    r(["14 September 2026 · forty days from a yes to settlement · nobody has been contacted"])
-    r([])
-    r(["THE ONE THING THAT MAKES IT FAST"])
-    r([("Two tracks at once, never in sequence. Track A is the seller: paper, tape, lots. "
-       "Track B is the buyers: teaser, NDA, round. Track B starts on DAY ONE from public CVM "
-       "data — the distressed lot can be described without a tape. Every broker runs these "
-       "end to end and takes three months.")])
-    r([])
-    r(["THE RULES THAT NEVER BEND"])
+def sheet_days(w) -> None:
+    w.writerow(["Deal:", "[ house name ]", "", "Day 0:", "[ dd/mm ]", "", "", ""])
+    w.writerow(["Day", "Track", "Owner", "What has to happen", "Why / watch out",
+                "Done", "Date done", "Notes"])
+    for day, track, owner, what, note in STEPS:
+        w.writerow([day, track, owner, what, note, "", "", ""])
+    w.writerow([])
+    w.writerow(["Track A = the seller", "Track B = the buyers", "Track C = the close"])
+    w.writerow([])
+    w.writerow(["THE RULES THAT NEVER BEND"])
     for t in RULES:
-        r(["", t])
-    r([])
+        w.writerow(["", t])
+    w.writerow([])
+    w.writerow(["THE FIVE THINGS THAT KILL IT", "The answer"])
+    for k, v in KILLERS:
+        w.writerow([k, v])
 
-    r(["SECTION 1 — THE 40 DAYS"])
-    r(["Copy this section per deal. Tick Done and put the date in."])
-    r(["Deal:", "[ house name ]", "", "Day 0 date:", "[ dd/mm ]"])
-    r(["Day", "Track", "Owner", "What has to happen", "Done", "Date done", "Notes"])
-    for day, track, owner, what in STEPS:
-        r([day, track, owner, what, "", "", ""])
-    r([])
-    r(["Track A = seller · Track B = buyers · Track C = the close"])
-    r([])
 
-    r(["SECTION 2 — PIPELINE"])
-    r([("Where each house sits. Update after every call. "
-       "Stages: ") + " / ".join(STAGES)])
+def sheet_pipeline(w) -> None:
     c = pd.read_csv("data/derived/call_sheet.csv")
     c["rank"] = c.house.map(lambda h: PRIORITY.get(_ascii(h), (99, ""))[0])
     c = c.sort_values(["rank", "face_Rm"], ascending=[True, False]).reset_index(drop=True)
-    r(["#", "House", "Funds", "Face R$m", "Stage", "Last contact", "Next step", "Owner", "Notes"])
+    w.writerow(["#", "House", "Funds", "Face R$m", "Stage", "Last contact", "Next step",
+                "Owner", "Notes"])
     for i, x in c.iterrows():
-        r([i + 1, x.house.title(), int(x.funds), x.face_Rm, "", "", "", "", ""])
-    r([])
+        w.writerow([i + 1, x.house.title(), int(x.funds), x.face_Rm, "", "", "", "", ""])
+    w.writerow([])
+    w.writerow(["Stages, in order"])
+    for i, s in enumerate(STAGES, start=1):
+        w.writerow([i, s])
 
-    r(["SECTION 3 — BUYER ROUND"])
-    r([("One row per buyer, for the live round. "
-       "No price goes in this sheet until it is on the standard form, in writing, "
-       "with an expiry and a signatory.")])
-    r(["Deal:", "[ house name ]", "", "Round closes:", "[ dd/mm ]"])
-    r(["Buyer", "Takes", "Days to a firm bid", "Teaser sent", "NDA back", "Data room",
-       "Bid received", "On the standard form?", "What would move his number"])
-    reg = yaml.safe_load(open("config/buyer_registry.yaml", encoding="utf-8"))  # noqa: SIM115
-    lot_label = {"A": "not yet due", "A2": "impaired", "B": "1-90d", "C": "90-180d",
-                 "D": "180d+", "E": "RJ claims"}
+
+def sheet_round(w) -> None:
+    w.writerow(["Deal:", "[ house name ]", "", "Round closes:", "[ dd/mm ]", "", "", "", ""])
+    w.writerow(["Buyer", "Takes", "Days to a firm bid", "Teaser sent", "NDA back",
+                "Data room", "Bid received", "On the standard form?",
+                "What would move his number"])
+    reg = yaml.safe_load(Path("config/buyer_registry.yaml").read_text(encoding="utf-8"))
     for b in sorted(reg["buyers"], key=lambda b: b["speed_days"]):
-        r([b["name"], " · ".join(lot_label.get(x, x) for x in b["lots"]),
-           b["speed_days"], "", "", "", "", "", ""])
-    r([])
+        w.writerow([b["name"], " · ".join(LOT_LABEL.get(x, x) for x in b["lots"]),
+                    b["speed_days"], "", "", "", "", "", ""])
+    w.writerow([])
+    w.writerow([("No price goes in this sheet until it is on the standard form, in writing, "
+                "with an expiry and a signatory.")])
 
-    r(["THE FIVE THINGS THAT KILL IT"])
-    for k, v in KILLERS:
-        r([k, v])
+
+def main() -> None:
+    out = sys.argv[1:4]
+    for path, fn in zip(out, (sheet_days, sheet_pipeline, sheet_round), strict=True):
+        with Path(path).open("w", newline="", encoding="utf-8") as fh:
+            fn(csv.writer(fh))
+        print(f"wrote {path} ({Path(path).stat().st_size} bytes)")
 
 
 if __name__ == "__main__":
