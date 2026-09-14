@@ -46,8 +46,13 @@ def brl(v: float) -> str:
 def cased(name: str) -> str:
     """ALEXANDRE LODI DE OLIVEIRA -> Alexandre Lodi de Oliveira."""
     small = {"de", "da", "do", "dos", "das", "e"}
+
+    def cap(w: str) -> str:
+        # Sant'ana -> Sant'Ana, d'oro -> D'Oro
+        return "'".join(part.capitalize() for part in w.split("'"))
+
     parts = str(name).strip().lower().split()
-    return " ".join(p if p in small and i else p.capitalize() for i, p in enumerate(parts))
+    return " ".join(p if p in small and i else cap(p) for i, p in enumerate(parts))
 
 
 def body(house: str, funds: pd.DataFrame, row: pd.Series) -> tuple[str, list[str]]:
@@ -68,11 +73,13 @@ def body(house: str, funds: pd.DataFrame, row: pd.Series) -> tuple[str, list[str
                  f"{brl(d)} passaram de 180 dias. Mesmo dentro disso há pedaços muito "
                  f"diferentes entre si, e cada um tem um comprador diferente.")
     elif d <= 0 and a > 0:
-        proof = (f"O {nm} reporta {brl(a)} a vencer e {brl(b90)} vencidos há menos de "
+        venc = "vencido" if round(b90 / M) == 1 else "vencidos"
+        proof = (f"O {nm} reporta {brl(a)} a vencer e {brl(b90)} {venc} há menos de "
                  f"90 dias. São dois ativos diferentes: a casa que compra um não é a "
                  f"casa que compra o outro.")
     else:
-        proof = (f"O {nm} reporta {brl(a)} a vencer e {brl(d)} vencidos há mais de 180 "
+        venc = "vencido" if round(d / M) == 1 else "vencidos"
+        proof = (f"O {nm} reporta {brl(a)} a vencer e {brl(d)} {venc} há mais de 180 "
                  f"dias. São dois ativos diferentes: a casa que compra um não é a casa "
                  f"que compra o outro.")
         if many:
