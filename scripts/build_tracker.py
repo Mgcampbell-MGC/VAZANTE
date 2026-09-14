@@ -1,9 +1,10 @@
-"""Build the deal tracker: the 40 days as something GC ticks off.
+"""Build the deal tracker: one workbook, four tabs, for a human to read.
 
-Four tabs. The 40 days is the master checklist for one live deal; Pipeline is
-where each of the fifteen houses sits; Buyer round is the log for one round.
-Uploaded to Drive as a Google Sheet, so it stays small and unstyled where styling
-would not survive the conversion.
+Styled to the same visual language as the target workbook — a navy header band,
+ochre section titles, the three tracks colour-coded so the eye can follow one
+down the page, and the three money rows picked out in green. Frozen panes and
+real column widths on every tab, because an unformatted grid of 150-character
+cells is unreadable no matter how good the content is.
 
     .venv/bin/python -m scripts.build_tracker
 """
@@ -11,8 +12,9 @@ would not survive the conversion.
 from __future__ import annotations
 
 import pandas as pd
+import yaml
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
@@ -20,14 +22,30 @@ from scripts.build_call_workbook import PRIORITY, _ascii
 
 OUT = "/home/user/VAZANTE/out/VAZANTE_tracker.xlsx"
 
-HDR = Font(bold=True, color="FFFFFF", size=11)
-FILL_A = PatternFill("solid", fgColor="1F3864")   # seller track
-FILL_B = PatternFill("solid", fgColor="9C6318")   # buyer track
-FILL_C = PatternFill("solid", fgColor="2C6E4F")   # the close
-BAND = PatternFill("solid", fgColor="F2F5FB")
-WARN = PatternFill("solid", fgColor="FCE4E4")
-BOLD = Font(bold=True)
+NAVY, OCHRE = "1F3864", "9C6318"
+TITLE = Font(bold=True, size=18, color=NAVY)
+SUB = Font(size=10.5, color="6B7885")
+SECT = Font(bold=True, size=12, color=OCHRE)
+HDR = Font(bold=True, color="FFFFFF", size=10.5)
+BODY = Font(size=10.5)
+BOLD = Font(bold=True, size=10.5)
+MONEY = Font(bold=True, size=10.5, color="14532D")
+KILLF = Font(bold=True, size=10.5, color="9C3A3D")
+
+FILL_HDR = PatternFill("solid", fgColor=NAVY)
+FILL_A = PatternFill("solid", fgColor="EDF1F8")
+FILL_B = PatternFill("solid", fgColor="FBF2E4")
+FILL_C = PatternFill("solid", fgColor="E6F2EC")
+FILL_MONEY = PatternFill("solid", fgColor="C9E5D4")
+FILL_FIRST = PatternFill("solid", fgColor="DCEBDF")
+BAND = PatternFill("solid", fgColor="F5F7FB")
+WARN = PatternFill("solid", fgColor="FBE4E4")
+
+THIN = Side(style="thin", color="D8DEE8")
+BOX = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 WRAP = Alignment(wrap_text=True, vertical="top")
+TOPC = Alignment(vertical="top", horizontal="center")
+TRACK_FILL = {"A": FILL_A, "B": FILL_B, "C": FILL_C}
 
 #: Day, track, owner, the action, and the note. The action is short so the column
 #: stays narrow; the note carries the reason, which is what stops it being done wrong.
@@ -108,157 +126,185 @@ STAGES = ["Emailed", "Replied", "Call held", "Said yes (tape agreed)", "NDA sign
           "Settled"]
 
 
-def head(ws, row: int, cols: list[tuple[str, int]], fill=FILL_A) -> None:
+def head(ws, row: int, cols: list[tuple[str, int]]) -> None:
     for i, (label, width) in enumerate(cols, start=1):
         c = ws.cell(row=row, column=i, value=label)
-        c.font, c.fill = HDR, fill
+        c.font, c.fill, c.border = HDR, FILL_HDR, BOX
         c.alignment = Alignment(wrap_text=True, vertical="center", horizontal="center")
         ws.column_dimensions[get_column_letter(i)].width = width
+    ws.row_dimensions[row].height = 30
     ws.freeze_panes = ws.cell(row=row + 1, column=1)
+
+
+def title(ws, t: str, sub: str) -> None:
+    ws.cell(row=1, column=1, value=t).font = TITLE
+    ws.row_dimensions[1].height = 26
+    c = ws.cell(row=2, column=1, value=sub)
+    c.font, c.alignment = SUB, Alignment(vertical="center")
+    ws.row_dimensions[2].height = 18
 
 
 def tab_start(wb: Workbook) -> None:
     ws = wb.create_sheet("Start here")
-    ws.column_dimensions["A"].width = 40
-    ws.column_dimensions["B"].width = 100
-    rows = [
-        ("VAZANTE — deal tracker", ""),
-        ("", "14 September 2026. Forty days from a yes to settlement. Nobody has been contacted."),
-        ("", ""),
-        ("THE ONE THING THAT MAKES IT FAST", ""),
-        ("Two tracks at once, never in sequence",
-         ("Track A is the seller: paper, tape, lots. Track B is the buyers: teaser, NDA, round. "
-         "Track B starts on DAY ONE from public CVM data — the distressed lot can be described "
-         "without a tape. Every broker runs these end to end and takes three months.")),
-        ("", ""),
-        ("HOW TO USE IT", ""),
-        ("The 40 days",
-         ("The master checklist for ONE live deal. Copy the tab per deal and rename it after the "
-         "house. Tick Done and put the date in.")),
-        ("Pipeline", "Where each of the fifteen houses sits. Update after every call."),
-        ("Buyer round", "One row per buyer per lot, for the live round."),
-        ("", ""),
-        ("WHEN MONEY ARRIVES", ""),
-        ("Mobilisation fee", "Day 5, on signature."),
-        ("Round fee", ("Day 23, on delivery of the quadro comparativo. This is the one that "
-                      "decouples our cash from their closing.")),
-        ("Success fee", "Day 40+, on settlement. The amounts are a partner decision."),
-        ("", ""),
-        ("THE RULES THAT NEVER BEND", ""),
-    ]
-    r = 1
-    for k, v in rows:
-        if k and not v:
-            c = ws.cell(row=r, column=1, value=k)
-            c.font = Font(bold=True, size=13, color="1F3864")
-        else:
-            ws.cell(row=r, column=1, value=k).font = BOLD
-            ws.cell(row=r, column=1).alignment = WRAP
-            ws.cell(row=r, column=2, value=v).alignment = WRAP
-        ws.row_dimensions[r].height = max(16, 13 * (len(v) // 95 + 1))
+    ws.sheet_view.showGridLines = False
+    ws.column_dimensions["A"].width = 36
+    ws.column_dimensions["B"].width = 96
+    title(ws, "VAZANTE — deal tracker",
+          "14 September 2026 · forty days from a yes to settlement · nobody has been contacted")
+
+    r = 4
+
+    def section(name: str) -> None:
+        nonlocal r
+        c = ws.cell(row=r, column=1, value=name)
+        c.font = SECT
+        ws.row_dimensions[r].height = 24
         r += 1
+
+    def line(k: str, v: str, fill=None, font=None) -> None:
+        nonlocal r
+        a = ws.cell(row=r, column=1, value=k)
+        a.font, a.alignment = font or BOLD, WRAP
+        b = ws.cell(row=r, column=2, value=v)
+        b.font, b.alignment = BODY, WRAP
+        if fill:
+            a.fill = b.fill = fill
+        a.border = b.border = BOX
+        ws.row_dimensions[r].height = max(30, 12.5 * (len(v) // 92 + 1))
+        r += 1
+
+    section("THE ONE THING THAT MAKES IT FAST")
+    line("Two tracks at once, never in sequence",
+         ("Track A is the seller — paper, tape, lots. Track B is the buyers — teaser, NDA, "
+         "round. Track B starts on DAY ONE from public CVM data, because the distressed lot "
+         "can be described without a tape. Every broker runs these end to end and takes "
+         "three months."), FILL_B)
+    r += 1
+
+    section("HOW TO USE IT")
+    line("The 40 days", ("The checklist for ONE live deal. Duplicate the tab per deal and "
+                        "rename it after the house. Tick Done and put the date in."))
+    line("Pipeline", "Where each of the fifteen houses sits. Update after every call.")
+    line("Buyer round", "One row per buyer for the live round.")
+    r += 1
+
+    section("WHEN MONEY ARRIVES")
+    line("Mobilisation fee", "Day 5, on signature.", FILL_MONEY, MONEY)
+    line("Round fee", ("Day 23, on delivery of the quadro comparativo. This is the one that "
+                      "decouples our cash from his closing."), FILL_MONEY, MONEY)
+    line("Success fee", "Day 40+, on settlement. The amounts are a partner decision.",
+         FILL_MONEY, MONEY)
+    r += 1
+
+    section("THE RULES THAT NEVER BEND")
     for t in RULES:
-        ws.cell(row=r, column=2, value="•  " + t).alignment = WRAP
-        r += 1
+        line("", t)
     r += 1
-    ws.cell(row=r, column=1, value="THE FIVE THINGS THAT KILL IT").font = Font(
-        bold=True, size=13, color="9C3A3D")
-    r += 1
+
+    section("THE FIVE THINGS THAT KILL IT")
     for k, v in KILLERS:
-        ws.cell(row=r, column=1, value=k).font = BOLD
-        ws.cell(row=r, column=1).alignment = WRAP
-        c = ws.cell(row=r, column=2, value=v)
-        c.alignment, c.fill = WRAP, WARN
-        ws.row_dimensions[r].height = max(30, 13 * (len(v) // 95 + 1))
-        r += 1
+        line(k, v, WARN, KILLF)
 
 
 def tab_days(wb: Workbook) -> None:
     ws = wb.create_sheet("The 40 days")
-    ws.cell(row=1, column=1, value="Deal:").font = BOLD
-    ws.cell(row=1, column=2, value="[ house name ]")
-    ws.cell(row=1, column=4, value="Day 0 date:").font = BOLD
-    ws.cell(row=1, column=5, value="[ dd/mm ]")
-    head(ws, 3, [("Day", 8), ("Track", 8), ("Owner", 9), ("What has to happen", 42),
-                 ("Why / watch out", 58), ("Done", 8), ("Date done", 12), ("Notes", 30)])
+    ws.sheet_view.showGridLines = False
+    title(ws, "The 40 days",
+          "Track A = the seller · Track B = the buyers · Track C = the close")
+    ws.cell(row=3, column=1, value="Deal:").font = BOLD
+    ws.cell(row=3, column=2, value="[ house name ]").font = BODY
+    ws.cell(row=3, column=4, value="Day 0:").font = BOLD
+    ws.cell(row=3, column=5, value="[ dd/mm ]").font = BODY
+    head(ws, 4, [("Day", 9), ("Track", 7), ("Owner", 8), ("What has to happen", 40),
+                 ("Why / watch out", 62), ("Done", 8), ("Date", 11), ("Notes", 30)])
+
     dv = DataValidation(type="list", formula1='"Yes,No,N/A"', allow_blank=True)
     ws.add_data_validation(dv)
-    r = 4
+    r = 5
     for day, track, owner, what, note in STEPS:
-        fill = {"A": BAND, "B": PatternFill("solid", fgColor="FBF3E6"),
-                "C": PatternFill("solid", fgColor="E9F3EE")}[track]
+        money = "FEE" in what
+        fill = FILL_MONEY if money else TRACK_FILL[track]
         for j, v in enumerate([day, track, owner, what, note, "", "", ""], start=1):
             c = ws.cell(row=r, column=j, value=v)
-            c.alignment = WRAP if j in (4, 5, 8) else Alignment(
-                vertical="top", horizontal="center")
-            c.fill = fill
-            if j == 4 and ("FEE" in what or "first money" in what or "second money" in what
-                           or "third money" in what):
-                c.font = BOLD
+            c.font = MONEY if money and j == 4 else BODY
+            c.alignment = WRAP if j in (4, 5, 8) else TOPC
+            c.fill, c.border = fill, BOX
         dv.add(ws.cell(row=r, column=6))
-        ws.row_dimensions[r].height = max(28, 13 * (len(note) // 56 + 1))
+        ws.row_dimensions[r].height = max(30, 12.5 * (len(note) // 60 + 1))
         r += 1
-    ws.auto_filter.ref = f"A3:H{r - 1}"
+    ws.auto_filter.ref = f"A4:H{r - 1}"
 
 
 def tab_pipeline(wb: Workbook) -> None:
     ws = wb.create_sheet("Pipeline")
+    ws.sheet_view.showGridLines = False
+    title(ws, "Pipeline",
+          "Ordered by how fast a house can say yes, not by size. Green = the first three calls.")
+    head(ws, 4, [("#", 5), ("House", 36), ("Funds", 7), ("Face R$m", 11), ("Stage", 22),
+                 ("Last contact", 13), ("Next step", 34), ("Owner", 8), ("Notes", 38)])
+
     c = pd.read_csv("data/derived/call_sheet.csv")
     c["rank"] = c.house.map(lambda h: PRIORITY.get(_ascii(h), (99, ""))[0])
     c = c.sort_values(["rank", "face_Rm"], ascending=[True, False]).reset_index(drop=True)
-
-    cols = [("#", 5), ("House", 34), ("Funds", 7), ("Face R$m", 10), ("Stage", 22),
-            ("Last contact", 13), ("Next step", 34), ("Owner", 9), ("Notes", 44)]
-    head(ws, 1, cols, fill=FILL_B)
     dv = DataValidation(type="list", formula1='"' + ",".join(STAGES) + '"', allow_blank=True)
     ws.add_data_validation(dv)
     for i, x in c.iterrows():
-        r = i + 2
-        vals = [i + 1, x.house.title(), int(x.funds), x.face_Rm, "", "", "", "", ""]
-        for j, v in enumerate(vals, start=1):
+        r = i + 5
+        first = x["rank"] <= 3
+        fill = FILL_FIRST if first else (BAND if i % 2 else None)
+        for j, v in enumerate([i + 1, x.house.title(), int(x.funds), x.face_Rm,
+                               "", "", "", "", ""], start=1):
             cell = ws.cell(row=r, column=j, value=v)
-            cell.alignment = WRAP if j in (2, 7, 9) else Alignment(
-                vertical="top", horizontal="center")
-            if x["rank"] <= 3:
-                cell.fill = PatternFill("solid", fgColor="E3EFE8")
-            elif i % 2:
-                cell.fill = BAND
+            cell.font = BOLD if first and j == 2 else BODY
+            cell.alignment = WRAP if j in (2, 7, 9) else TOPC
+            cell.border = BOX
+            if fill:
+                cell.fill = fill
             if j == 4:
                 cell.number_format = "#,##0.0"
         dv.add(ws.cell(row=r, column=5))
-    ws.auto_filter.ref = f"A1:I{len(c) + 1}"
+        ws.row_dimensions[r].height = 26
+    ws.auto_filter.ref = f"A4:I{len(c) + 4}"
 
 
 def tab_round(wb: Workbook) -> None:
     ws = wb.create_sheet("Buyer round")
-    ws.cell(row=1, column=1, value="Deal:").font = BOLD
-    ws.cell(row=1, column=2, value="[ house name ]")
-    ws.cell(row=1, column=4, value="Round closes:").font = BOLD
-    ws.cell(row=1, column=5, value="[ dd/mm ]")
-    head(ws, 3, [("Buyer", 30), ("Lot", 14), ("Teaser sent", 12), ("NDA back", 11),
-                 ("Data room", 11), ("Bid received", 12), ("On the standard form?", 14),
-                 ("Expiry", 11), ("What would move his number", 46)])
+    ws.sheet_view.showGridLines = False
+    title(ws, "Buyer round",
+          ("Fastest to a firm bid first. No price goes in here until it is on the standard "
+          "form, in writing, with an expiry and a signatory."))
+    ws.cell(row=3, column=1, value="Deal:").font = BOLD
+    ws.cell(row=3, column=2, value="[ house name ]").font = BODY
+    ws.cell(row=3, column=4, value="Round closes:").font = BOLD
+    ws.cell(row=3, column=5, value="[ dd/mm ]").font = BODY
+    head(ws, 4, [("Buyer", 34), ("Takes", 30), ("Days to a firm bid", 11),
+                 ("Teaser sent", 11), ("NDA back", 10), ("Data room", 10),
+                 ("Bid received", 11), ("On the standard form?", 13),
+                 ("What would move his number", 44)])
+
+    lot_label = {"A": "not yet due", "A2": "impaired", "B": "1-90d", "C": "90-180d",
+                 "D": "180d+", "E": "RJ claims"}
+    with open("config/buyer_registry.yaml", encoding="utf-8") as fh:
+        reg = yaml.safe_load(fh)
     dv = DataValidation(type="list", formula1='"Yes,No,Chasing"', allow_blank=True)
     ws.add_data_validation(dv)
-    import yaml
-    reg = yaml.safe_load(open("config/buyer_registry.yaml", encoding="utf-8"))  # noqa: SIM115
-    names = [b["name"] for b in sorted(reg["buyers"], key=lambda b: b["speed_days"])]
-    for i, n in enumerate(names):
-        r = i + 4
-        ws.cell(row=r, column=1, value=n).alignment = WRAP
-        for j in range(2, 10):
-            cell = ws.cell(row=r, column=j)
-            cell.alignment = WRAP if j == 9 else Alignment(
-                vertical="top", horizontal="center")
-            if i % 2:
-                cell.fill = BAND
-        for j in (3, 4, 5, 6, 7):
+    for i, b in enumerate(sorted(reg["buyers"], key=lambda b: b["speed_days"])):
+        r = i + 5
+        fast = b["speed_days"] <= 21
+        fill = FILL_FIRST if fast else (BAND if i % 2 else None)
+        vals = [b["name"], " · ".join(lot_label.get(x, x) for x in b["lots"]),
+                b["speed_days"], "", "", "", "", "", ""]
+        for j, v in enumerate(vals, start=1):
+            cell = ws.cell(row=r, column=j, value=v)
+            cell.font = BOLD if fast and j == 1 else BODY
+            cell.alignment = WRAP if j in (1, 2, 9) else TOPC
+            cell.border = BOX
+            if fill:
+                cell.fill = fill
+        for j in (4, 5, 6, 7, 8):
             dv.add(ws.cell(row=r, column=j))
-        if i % 2:
-            ws.cell(row=r, column=1).fill = BAND
-    ws.cell(row=len(names) + 5, column=1,
-            value=("No price goes in this sheet until it is on the standard form, in writing, "
-                  "with an expiry and a signatory.")).font = Font(bold=True, color="9C3A3D")
+        ws.row_dimensions[r].height = 26
+    ws.auto_filter.ref = f"A4:I{len(reg['buyers']) + 4}"
 
 
 def main() -> None:
@@ -269,8 +315,64 @@ def main() -> None:
     tab_pipeline(wb)
     tab_round(wb)
     wb.save(OUT)
-    print(f"wrote {OUT}\n  tabs: {', '.join(wb.sheetnames)}")
+    size = slim(OUT)
+    print(f"wrote {OUT} ({size:,} bytes)\n  tabs: {', '.join(wb.sheetnames)}")
 
+
+
+def slim(path: str = OUT) -> int:
+    """Repack with a stub theme and maximum compression.
+
+    openpyxl writes a 10KB Office theme that nothing here uses; replacing it with
+    a minimal valid one takes the workbook from 14.2KB to 13.1KB, which matters
+    only because the file has to travel. The stub keeps the schema satisfied, so
+    Excel, LibreOffice and Google all still open it.
+    """
+    import zipfile
+    from pathlib import Path
+
+    stub = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="t">'
+        "<a:themeElements><a:clrScheme name=\"t\">"
+        '<a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1>'
+        '<a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1>'
+        '<a:dk2><a:srgbClr val="44546A"/></a:dk2><a:lt2><a:srgbClr val="E7E6E6"/></a:lt2>'
+        '<a:accent1><a:srgbClr val="4472C4"/></a:accent1>'
+        '<a:accent2><a:srgbClr val="ED7D31"/></a:accent2>'
+        '<a:accent3><a:srgbClr val="A5A5A5"/></a:accent3>'
+        '<a:accent4><a:srgbClr val="FFC000"/></a:accent4>'
+        '<a:accent5><a:srgbClr val="5B9BD5"/></a:accent5>'
+        '<a:accent6><a:srgbClr val="70AD47"/></a:accent6>'
+        '<a:hlink><a:srgbClr val="0563C1"/></a:hlink>'
+        '<a:folHlink><a:srgbClr val="954F72"/></a:folHlink>'
+        '</a:clrScheme><a:fontScheme name="t"><a:majorFont>'
+        '<a:latin typeface="Calibri Light"/><a:ea typeface=""/><a:cs typeface=""/>'
+        '</a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/>'
+        '<a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="t">'
+        '<a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'
+        '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'
+        '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst>'
+        '<a:lnStyleLst><a:ln><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>'
+        '<a:ln><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>'
+        '<a:ln><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst>'
+        "<a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle>"
+        "<a:effectStyle><a:effectLst/></a:effectStyle>"
+        "<a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>"
+        '<a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'
+        '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'
+        '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst>'
+        "</a:fmtScheme></a:themeElements></a:theme>"
+    )
+    tmp = path + ".tmp"
+    with zipfile.ZipFile(path) as zin, zipfile.ZipFile(
+        tmp, "w", zipfile.ZIP_DEFLATED, compresslevel=9
+    ) as zout:
+        for it in zin.infolist():
+            body = stub.encode() if it.filename == "xl/theme/theme1.xml" else zin.read(it.filename)
+            zout.writestr(it.filename, body)
+    Path(tmp).replace(path)
+    return Path(path).stat().st_size
 
 if __name__ == "__main__":
     main()
