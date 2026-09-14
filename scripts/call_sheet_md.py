@@ -21,13 +21,22 @@ BANNED = ["laudo", "parecer", "auditoria", "avaliação", "avaliacao", "mandato"
 
 
 def short(name: str) -> str:
+    # Collapse whitespace FIRST: some filed names carry double spaces, which made
+    # the phrase replacements below miss and mangle the result (TTMR came out as
+    # "FIDC CREDITORIOSADA").
+    name = " ".join(str(name).split())
     n = name.replace("FUNDO DE INVESTIMENTO EM DIREITOS CREDITÓRIOS", "FIDC")
     n = n.replace("FUNDO DE INVESTIMENTOS EM DIREITOS CREDITÓRIOS", "FIDC")
     n = n.replace("FUNDO DE INVESTIMENTO EM DIREITOS CREDITORIOS", "FIDC")
-    for junk in [" NÃO PADRONIZADOS", " NÃO-PADRONIZADOS", " NAO PADRONIZADOS",
-                 " - RESPONSABILIDADE LIMIT", " RESPONSABILIDADE LIMITADA", " - RESP LIMITADA",
-                 " DE RESPONSABILIDADE LIMITADA", " MULTISSETORIAL", " MULTISSEGMENTOS",
-                 " MULTISEGMENT0S", " MULTISEGMENTOS", " MULTICREDITO", " LP"]:
+    # Longest first: " - RESPONSABILIDADE LIMIT" is a prefix of the full phrase and
+    # would leave a stray "ADA" behind if it ran first.
+    for junk in [" DE RESPONSABILIDADE LIMITADA", " - RESPONSABILIDADE LIMITADA",
+                 " RESPONSABILIDADE LIMITADA", " - RESP LIMITADA", " NÃO PADRONIZADOS",
+                 " NÃO-PADRONIZADOS", " NAO PADRONIZADOS", " MULTISSETORIAL",
+                 " MULTISSEGMENTOS", " MULTISEGMENT0S", " MULTISEGMENTOS",
+                 " MULTICREDITO", " LP",
+                 # truncated at source in the CVM filing — must come after the full forms
+                 " - RESPONSABILIDADE LIMIT", " - NÃO PADRONIZADO"]:
         n = n.replace(junk, "")
     return " ".join(n.split()).strip(" -")
 
